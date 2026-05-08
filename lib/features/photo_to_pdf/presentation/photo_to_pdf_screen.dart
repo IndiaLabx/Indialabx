@@ -128,6 +128,7 @@ class PhotoToPdfScreen extends ConsumerWidget {
           ),
           FilledButton.icon(
             onPressed: () async {
+              // ignore: deprecated_member_use
               await Share.shareXFiles([XFile(pdfPath)], text: 'Here is my PDF generated with DocSathi!');
             },
             icon: const Icon(Icons.share),
