@@ -28,9 +28,6 @@
 .pub/
 /build/
 /app/build/
-/android/app/build/
-/android/app/src/main/gen/
-/android/build/
 /ios/Flutter/App.framework
 /ios/Flutter/Flutter.framework
 /ios/Flutter/Flutter.podspec
@@ -60,7 +57,6 @@
 # Coverage output
 /coverage/
 
-android/
 ios/
 linux/
 macos/
