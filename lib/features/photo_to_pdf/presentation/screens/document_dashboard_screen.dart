@@ -91,7 +91,7 @@ class DocumentDashboardScreen extends ConsumerWidget {
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/photo-to-pdf/select'),
+        onPressed: () => context.push('/photo-to-pdf/workspace'),
         child: const Icon(Icons.add),
       ),
     );
