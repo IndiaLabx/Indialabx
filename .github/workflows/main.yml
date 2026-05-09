@@ -48,7 +48,7 @@ jobs:
       #   run: |
       #     echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
       - name: Build Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --split-per-abi
         # env:
         #   KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         #   KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*-release.apk
 
       - name: Upload Release AAB Artifact
         uses: actions/upload-artifact@v4
@@ -77,7 +77,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/*-release.apk
             build/app/outputs/bundle/release/app-release.aab
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
