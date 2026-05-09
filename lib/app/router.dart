@@ -1,9 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:docsathi/features/home/presentation/home_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/document_dashboard_screen.dart';
-import 'package:docsathi/features/photo_to_pdf/presentation/screens/select_reorder_screen.dart';
-import 'package:docsathi/features/photo_to_pdf/presentation/screens/edit_screen.dart';
-import 'package:docsathi/features/photo_to_pdf/presentation/screens/pdf_settings_screen.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/screens/workspace_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/preview_screen.dart';
 
 final appRouter = GoRouter(
@@ -18,16 +16,8 @@ final appRouter = GoRouter(
       builder: (context, state) => const DocumentDashboardScreen(),
       routes: [
         GoRoute(
-          path: 'select',
-          builder: (context, state) => const SelectReorderScreen(),
-        ),
-        GoRoute(
-          path: 'edit',
-          builder: (context, state) => const EditScreen(),
-        ),
-        GoRoute(
-          path: 'settings',
-          builder: (context, state) => const PdfSettingsScreen(),
+          path: 'workspace',
+          builder: (context, state) => const WorkspaceScreen(),
         ),
         GoRoute(
           path: 'preview',
