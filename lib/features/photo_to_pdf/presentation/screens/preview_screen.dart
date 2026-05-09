@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:docsathi/features/photo_to_pdf/presentation/controllers/photo_selection_controller.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:printing/printing.dart';
 import 'dart:io';
 
@@ -38,7 +38,7 @@ class PreviewScreen extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: FilledButton(
             onPressed: () {
-              ref.read(photoSelectionProvider.notifier).clear();
+              ref.read(workspaceProvider.notifier).clear();
               context.go('/photo-to-pdf');
             },
             child: const Text('Done'),

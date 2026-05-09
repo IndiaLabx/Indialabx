@@ -1,10 +1,25 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class ImageService {
   static final _uuid = const Uuid();
+
+  static Future<Uint8List> generateThumbnail(String path) async {
+    final result = await FlutterImageCompress.compressWithFile(
+      path,
+      minWidth: 150,
+      minHeight: 150,
+      quality: 80,
+    );
+    if (result == null) {
+        throw Exception("Failed to compress image");
+    }
+    return result;
+  }
 
   static Future<String> rotateImage(String path, int angle) async {
     final bytes = await File(path).readAsBytes();
@@ -45,5 +60,33 @@ class ImageService {
     await newFile.writeAsBytes(img.encodeJpg(filteredImage));
 
     return newPath;
+  }
+
+  // Isolate processing for generating thumbnails in bulk
+  static Future<List<Uint8List>> generateThumbnailsInIsolate(List<String> paths) async {
+      return await compute(_generateThumbnailsIsolate, paths);
+  }
+
+  static Future<List<Uint8List>> _generateThumbnailsIsolate(List<String> paths) async {
+      final thumbnails = <Uint8List>[];
+      for (final path in paths) {
+          try {
+              final result = await FlutterImageCompress.compressWithFile(
+                  path,
+                  minWidth: 150,
+                  minHeight: 150,
+                  quality: 80,
+              );
+              if (result != null) {
+                  thumbnails.add(result);
+              } else {
+                 // Fallback or empty if compress fails
+                 thumbnails.add(Uint8List(0));
+              }
+          } catch(e) {
+              thumbnails.add(Uint8List(0));
+          }
+      }
+      return thumbnails;
   }
 }

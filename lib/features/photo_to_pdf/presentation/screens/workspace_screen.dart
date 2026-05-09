@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
-import 'package:docsathi/features/photo_to_pdf/presentation/controllers/photo_selection_controller.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/pdf_settings_sheet.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/fluid_deck.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
   const WorkspaceScreen({super.key});
@@ -16,7 +15,39 @@ class WorkspaceScreen extends ConsumerStatefulWidget {
 }
 
 class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
-  bool _isProcessing = false;
+  final TextEditingController _nameController = TextEditingController();
+  final FocusNode _nameFocusNode = FocusNode();
+  bool _isEditingName = false;
+  PageController _pageController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final workspaceState = ref.read(workspaceProvider);
+      if (workspaceState.pages.isEmpty) {
+        ref.read(workspaceProvider.notifier).pickImages();
+      }
+      _nameController.text = workspaceState.documentName;
+    });
+
+    _nameFocusNode.addListener(() {
+      if (!_nameFocusNode.hasFocus) {
+        setState(() {
+          _isEditingName = false;
+        });
+        ref.read(workspaceProvider.notifier).setDocumentName(_nameController.text);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _nameFocusNode.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   void _showSettingsSheet() {
     showModalBottomSheet(
@@ -26,128 +57,95 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     );
   }
 
-  void _showImageOptions(BuildContext context, String path, int index) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.crop),
-              title: const Text('Crop'),
-              onTap: () {
-                Navigator.pop(context);
-                _cropImage(path, index);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.rotate_right),
-              title: const Text('Rotate 90°'),
-              onTap: () {
-                Navigator.pop(context);
-                _rotateImage(path, index);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.color_lens),
-              title: const Text('Color Filter'),
-              onTap: () {
-                Navigator.pop(context);
-                _applyColorFilter(path, index);
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('Remove', style: TextStyle(color: Colors.red)),
-              onTap: () {
-                Navigator.pop(context);
-                ref.read(photoSelectionProvider.notifier).removeImage(index);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _cropImage(String path, int index) async {
-    final croppedFile = await ImageCropper().cropImage(
-      sourcePath: path,
-      uiSettings: [
-        AndroidUiSettings(
-            toolbarTitle: 'Crop Image',
-            toolbarColor: Theme.of(context).primaryColor,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false),
-        IOSUiSettings(
-          title: 'Crop Image',
-        ),
-      ],
-    );
-
-    if (croppedFile != null) {
-      ref.read(photoSelectionProvider.notifier).updateImage(index, croppedFile.path);
-    }
-  }
-
-  Future<void> _rotateImage(String path, int index) async {
-    setState(() => _isProcessing = true);
-    final newPath = await ImageService.rotateImage(path, 90);
-    ref.read(photoSelectionProvider.notifier).updateImage(index, newPath);
-    setState(() => _isProcessing = false);
-  }
-
-  Future<void> _applyColorFilter(String path, int index) async {
-    final filter = await showDialog<String>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Select Color Mode'),
-        children: [
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'Original'),
-            child: const Text('Original'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'Grayscale'),
-            child: const Text('Grayscale'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'Black & White'),
-            child: const Text('Black & White'),
-          ),
-        ],
-      ),
-    );
-
-    if (filter != null) {
-      setState(() => _isProcessing = true);
-      final newPath = await ImageService.applyColorFilter(path, filter);
-      ref.read(photoSelectionProvider.notifier).updateImage(index, newPath);
-      setState(() => _isProcessing = false);
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final imagePaths = ref.read(photoSelectionProvider);
-      if (imagePaths.isEmpty) {
-        ref.read(photoSelectionProvider.notifier).pickImages();
+  String _calculateEstimatedSize(WorkspaceState state) {
+    if (state.pages.isEmpty) return '0 KB';
+    int totalBytes = 0;
+    for (final page in state.pages) {
+      final file = File(page.effectivePath);
+      if (file.existsSync()) {
+        totalBytes += file.lengthSync();
       }
-    });
+    }
+    // Assume high quality compression factor of 0.9 for display
+    final estBytes = totalBytes * 0.9;
+    if (estBytes < 1024 * 1024) {
+      return '${(estBytes / 1024).toStringAsFixed(0)} KB';
+    }
+    return '${(estBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   @override
   Widget build(BuildContext context) {
-    final imagePaths = ref.watch(photoSelectionProvider);
-    final notifier = ref.read(photoSelectionProvider.notifier);
+    final workspaceState = ref.watch(workspaceProvider);
+    final notifier = ref.read(workspaceProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Studio Workspace'),
+        titleSpacing: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (workspaceState.mode == WorkspaceMode.focus) {
+              notifier.setMode(WorkspaceMode.grid);
+            } else {
+              Navigator.pop(context);
+            }
+          },
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: _isEditingName
+                  ? TextField(
+                      controller: _nameController,
+                      focusNode: _nameFocusNode,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      onSubmitted: (value) {
+                        setState(() {
+                          _isEditingName = false;
+                        });
+                        notifier.setDocumentName(value);
+                      },
+                    )
+                  : GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _isEditingName = true;
+                        });
+                        _nameFocusNode.requestFocus();
+                      },
+                      child: Text(
+                        workspaceState.documentName,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Est: ${_calculateEstimatedSize(workspaceState)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_photo_alternate),
@@ -158,7 +156,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       ),
       body: Stack(
         children: [
-          if (imagePaths.isEmpty)
+          if (workspaceState.pages.isEmpty)
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -175,58 +173,126 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 ],
               ),
             )
-          else
+          else if (workspaceState.mode == WorkspaceMode.grid)
             Padding(
-              padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0, bottom: 80.0),
+              padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0, bottom: 160.0), // Padding for toolbars
               child: ReorderableGridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
                 ),
-                itemCount: imagePaths.length,
+                itemCount: workspaceState.pages.length,
                 onReorder: notifier.reorderImages,
                 itemBuilder: (context, index) {
-                  final path = imagePaths[index];
+                  final page = workspaceState.pages[index];
                   return _ImageGridItem(
-                    key: ValueKey(path),
-                    path: path,
+                    key: ValueKey(page.effectivePath),
+                    page: page,
                     index: index,
-                    onTap: () => _showImageOptions(context, path, index),
+                    onTap: () {
+                      notifier.setFocusedPage(index);
+                      notifier.setMode(WorkspaceMode.focus);
+                      _pageController = PageController(initialPage: index);
+                    },
                     onDelete: () => notifier.removeImage(index),
                   );
                 },
               ),
+            )
+          else
+            // Focus Mode: Swipeable Pager
+            Padding(
+               padding: const EdgeInsets.only(bottom: 160.0),
+               child: PageView.builder(
+                 controller: _pageController,
+                 itemCount: workspaceState.pages.length,
+                 onPageChanged: (index) => notifier.setFocusedPage(index),
+                 itemBuilder: (context, index) {
+                    final page = workspaceState.pages[index];
+                    return Hero(
+                      tag: 'hero_workspace_image_${index}_${page.effectivePath}',
+                      child: Container(
+                         margin: const EdgeInsets.all(16),
+                         decoration: BoxDecoration(
+                           borderRadius: BorderRadius.circular(16),
+                           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                         ),
+                         clipBehavior: Clip.antiAlias,
+                         child: Image.memory(
+                            page.thumbnailBytes,
+                            fit: BoxFit.contain, // Match grid view for smooth hero animation
+                         ),
+                      ),
+                    );
+                 },
+               ),
             ),
 
-          if (_isProcessing)
+          if (workspaceState.mode == WorkspaceMode.focus)
+             Positioned(
+               top: 16,
+               left: 0,
+               right: 0,
+               child: Center(
+                 child: Container(
+                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                   decoration: BoxDecoration(
+                     color: Colors.black54,
+                     borderRadius: BorderRadius.circular(20),
+                   ),
+                   child: Text(
+                     'Page ${workspaceState.focusedPageIndex + 1} of ${workspaceState.pages.length}',
+                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                   ),
+                 ),
+               ),
+             ),
+
+          const FluidDeck(),
+
+          if (workspaceState.isProcessing)
             Container(
               color: Colors.black45,
-              child: const Center(child: CircularProgressIndicator()),
+              child: Center(
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        Text(workspaceState.processingMessage),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
         ],
       ),
-      floatingActionButton: imagePaths.isNotEmpty
+      floatingActionButton: workspaceState.pages.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: _showSettingsSheet,
               icon: const Icon(Icons.picture_as_pdf),
               label: const Text('Create PDF'),
             )
           : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
 
 class _ImageGridItem extends StatelessWidget {
-  final String path;
+  final DocumentPage page;
   final int index;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
   const _ImageGridItem({
     required super.key,
-    required this.path,
+    required this.page,
     required this.index,
     required this.onTap,
     required this.onDelete,
@@ -236,50 +302,48 @@ class _ImageGridItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        elevation: 2,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.file(
-              File(path),
-              fit: BoxFit.cover,
-            ),
-            Positioned(
-              top: 4,
-              left: 4,
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: Colors.black54,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+      child: Hero(
+        tag: 'hero_workspace_image_${index}_${page.effectivePath}',
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          elevation: 2,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.memory(
+                page.thumbnailBytes,
+                fit: BoxFit.cover, // Grid uses cover
+              ),
+              Positioned(
+                top: 4,
+                left: 4,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
                 ),
               ),
-            ),
-            Positioned(
-              top: -4,
-              right: -4,
-              child: IconButton(
-                icon: const Icon(Icons.cancel, color: Colors.white, size: 20),
-                onPressed: onDelete,
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.black38,
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(24, 24),
+              Positioned(
+                top: -4,
+                right: -4,
+                child: IconButton(
+                  icon: const Icon(Icons.cancel, color: Colors.white, size: 20),
+                  onPressed: onDelete,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black38,
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(24, 24),
+                  ),
                 ),
               ),
-            ),
-            const Positioned(
-              bottom: 4,
-              right: 4,
-              child: Icon(Icons.edit, color: Colors.white70, size: 20),
-            )
-          ],
+            ],
+          ),
         ),
       ),
     );

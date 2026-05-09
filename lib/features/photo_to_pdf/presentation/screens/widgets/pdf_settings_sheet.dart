@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:docsathi/features/photo_to_pdf/presentation/controllers/pdf_settings_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/data/models/pdf_settings_model.dart';
-import 'package:docsathi/features/photo_to_pdf/presentation/controllers/photo_selection_controller.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/controllers/pdf_settings_controller.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/services/pdf_service.dart';
-import 'package:docsathi/features/photo_to_pdf/data/models/document_model.dart';
-import 'package:docsathi/features/photo_to_pdf/presentation/controllers/document_controller.dart';
-import 'package:uuid/uuid.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/post_generation_dashboard.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class PdfSettingsSheet extends ConsumerStatefulWidget {
@@ -18,21 +15,12 @@ class PdfSettingsSheet extends ConsumerStatefulWidget {
 }
 
 class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
-  final TextEditingController _fileNameController = TextEditingController();
+  final TextEditingController _fileNameController = TextEditingController(text: 'DocSathi_Document');
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _watermarkTextController = TextEditingController();
   bool _isGenerating = false;
   double _progress = 0.0;
   String _progressMessage = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _fileNameController.text = 'DocSathi_${DateTime.now().millisecondsSinceEpoch}';
-    final settings = ref.read(pdfSettingsProvider);
-    _watermarkTextController.text = settings.watermarkText ?? '';
-    _passwordController.text = settings.password ?? '';
-  }
 
   @override
   void dispose() {
@@ -43,58 +31,74 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
   }
 
   Future<void> _generatePdf() async {
-    final imagePaths = ref.read(photoSelectionProvider);
-    if (imagePaths.isEmpty) return;
-
-
-
-    // Save transient text fields into settings state right before generating
-    ref.read(pdfSettingsProvider.notifier).updateSettings(
-          password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
-          watermarkText: _watermarkTextController.text.isNotEmpty ? _watermarkTextController.text : null,
-        );
-
-    final finalSettings = ref.read(pdfSettingsProvider);
-
     setState(() {
       _isGenerating = true;
-      _progress = 0.0;
-      _progressMessage = 'Preparing to generate PDF...';
+      _progress = 0.1;
+      _progressMessage = 'Preparing document...';
     });
 
     try {
-      final docPath = await PdfService.generatePdfFromImages(
+      final workspaceState = ref.read(workspaceProvider);
+      final notifier = ref.read(pdfSettingsProvider.notifier);
+
+      await notifier.updateSettings(
+        password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
+        watermarkText: _watermarkTextController.text.isNotEmpty ? _watermarkTextController.text : null,
+      );
+
+      // Use effective paths from WorkspaceState
+      final imagePaths = workspaceState.pages.map((p) => p.effectivePath).toList();
+
+      setState(() {
+        _progress = 0.3;
+        _progressMessage = 'Processing images...';
+      });
+
+      final pdfPath = await PdfService.generatePdfFromImages(
         imagePaths: imagePaths,
-        settings: finalSettings,
+        settings: ref.read(pdfSettingsProvider),
         onProgress: (progress, message) {
           if (mounted) {
             setState(() {
-              _progress = progress;
+              _progress = 0.3 + (progress * 0.6);
               _progressMessage = message;
             });
           }
         },
       );
 
-      final docId = const Uuid().v4();
-      final document = DocumentModel(
-        id: docId,
-        filePath: docPath,
-        fileName: _fileNameController.text.isEmpty ? 'Document' : _fileNameController.text,
-        createdAt: DateTime.now(),
-        sizeInBytes: 0, // Should read actual file size in a real app
-        pageCount: imagePaths.length,
-      );
-
-      await ref.read(documentListProvider.notifier).addDocument(document);
+      setState(() {
+        _progress = 1.0;
+        _progressMessage = 'Complete!';
+      });
 
       if (mounted) {
-        Navigator.pop(context); // Close sheet
-        context.go('/photo-to-pdf/preview', extra: docPath);
+        // Pop the settings sheet first
+        Navigator.pop(context);
+
+        // Show the post-generation rich action dashboard
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          shape: const RoundedRectangleBorder(
+             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (context) => PostGenerationDashboard(
+             pdfPath: pdfPath,
+             fileName: _fileNameController.text,
+             imagePaths: imagePaths,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate PDF: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error generating PDF: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
         setState(() => _isGenerating = false);
       }
     }
@@ -103,20 +107,18 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
   void _showColorPicker(BuildContext context, Color currentColor, Function(Color) onColorChanged) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         Color pickerColor = currentColor;
         return AlertDialog(
-          title: const Text('Pick a color!'),
+          title: const Text('Pick a color'),
           content: SingleChildScrollView(
             child: ColorPicker(
               pickerColor: pickerColor,
-              onColorChanged: (color) {
-                pickerColor = color;
-              },
+              onColorChanged: (color) => pickerColor = color,
               pickerAreaHeightPercent: 0.8,
             ),
           ),
-          actions: <Widget>[
+          actions: [
             TextButton(
               child: const Text('Got it'),
               onPressed: () {
