@@ -64,7 +64,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   String _calculateEstimatedSize(WorkspaceState state) {
-    if (state.pages.isEmpty) return '0 B';
+    if (state.pages.isEmpty) {
+      return '0 B';
+    }
 
     int totalOriginalBytes = 0;
     for (var page in state.pages) {
@@ -86,8 +88,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
     final estimatedBytes = (totalOriginalBytes * compressionFactor).toInt();
 
-    if (estimatedBytes < 1024 * 1024)
+    if (estimatedBytes < 1024 * 1024) {
       return '${(estimatedBytes / 1024).toStringAsFixed(0)} KB';
+    }
     return '${(estimatedBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
