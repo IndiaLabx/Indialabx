@@ -38,7 +38,7 @@ class ImageService {
   }
 
   static Future<String> applyColorFilter(String path, String filter) async {
-    if (filter == 'Original') return path;
+    if (filter == 'original' || filter == 'Original') return path;
 
     final bytes = await File(path).readAsBytes();
     img.Image? originalImage = img.decodeImage(bytes);
@@ -46,8 +46,10 @@ class ImageService {
     if (originalImage == null) return path;
 
     img.Image filteredImage;
-    if (filter == 'Grayscale') {
+    if (filter == 'grayscale' || filter == 'Grayscale') {
       filteredImage = img.grayscale(originalImage);
+    } else if (filter == 'enhanced' || filter == 'Enhanced') {
+      filteredImage = img.adjustColor(originalImage, contrast: 1.2, brightness: 1.1);
     } else if (filter == 'Black & White') {
       filteredImage = img.luminanceThreshold(originalImage);
     } else {
