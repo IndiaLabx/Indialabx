@@ -5,12 +5,19 @@ import 'package:flutter/material.dart' show Color;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 import 'package:docsathi/features/photo_to_pdf/data/models/pdf_settings_model.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 typedef ProgressCallback = void Function(double progress, String message);
 
 class PdfService {
+  static final _uuid = const Uuid();
+
+  static String generateOutputFilePath(String directoryPath) {
+    return '$directoryPath/DocSathi_${_uuid.v4()}.pdf';
+  }
+
   static PdfColor _getPdfColor(Color color, double opacity) {
     return PdfColor(
       color.r,
@@ -162,7 +169,7 @@ class PdfService {
     onProgress?.call(0.9, 'Saving PDF file...');
 
     final outputDir = await getApplicationDocumentsDirectory();
-    final outputFile = File('${outputDir.path}/DocSathi_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    final outputFile = File(generateOutputFilePath(outputDir.path));
     await outputFile.writeAsBytes(await pdf.save());
 
     onProgress?.call(1.0, 'Done!');

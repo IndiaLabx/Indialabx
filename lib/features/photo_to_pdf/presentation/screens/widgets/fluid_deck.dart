@@ -121,21 +121,27 @@ class FluidDeck extends ConsumerWidget {
             icon: const Icon(Icons.crop),
             label: const Text('Crop'),
             onPressed: () {
-               // We will integrate ImageCropper later
+               ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(content: Text('Cropping feature coming soon!')),
+               );
             },
           ),
           TextButton.icon(
             icon: const Icon(Icons.rotate_right),
             label: const Text('Rotate'),
             onPressed: () {
-               // We will integrate rotate later
+               ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(content: Text('Rotation feature coming soon!')),
+               );
             },
           ),
           OutlinedButton.icon(
             icon: const Icon(Icons.done_all),
             label: const Text('Apply to All'),
             onPressed: () {
-               // Background isolate logic here
+               ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(content: Text('Batch edit feature coming soon!')),
+               );
             },
           ),
         ],
