@@ -13,8 +13,8 @@ class _GatewayScreenState extends State<GatewayScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulate brief animation delay before going to workspace
-    Future.delayed(const Duration(seconds: 2), () {
+    // Navigate immediately - no artificial delays
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.go('/photo-to-pdf/workspace');
       }
@@ -33,12 +33,17 @@ class _GatewayScreenState extends State<GatewayScreen> {
               width: 200,
               height: 200,
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.folder_shared, size: 100),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.folder_shared, size: 100),
             ),
             const SizedBox(height: 24),
             const Text(
               'Accessing Gallery...',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.blueGrey),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.blueGrey,
+              ),
             ),
           ],
         ),

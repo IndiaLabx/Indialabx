@@ -4,6 +4,10 @@ import 'package:docsathi/features/photo_to_pdf/data/models/pdf_settings_model.da
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/pdf_settings_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/services/pdf_service.dart';
+import 'package:docsathi/features/photo_to_pdf/data/models/document_model.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/controllers/document_controller.dart';
+import 'package:uuid/uuid.dart';
+import 'dart:io';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/post_generation_dashboard.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
@@ -15,9 +19,11 @@ class PdfSettingsSheet extends ConsumerStatefulWidget {
 }
 
 class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
-  final TextEditingController _fileNameController = TextEditingController(text: 'DocSathi_Document');
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _watermarkTextController = TextEditingController();
+  final TextEditingController _fileNameController = TextEditingController(
+    text: 'DocSathi_Document',
+  );
+  final TextEditingController _watermarkTextController =
+      TextEditingController();
   bool _isGenerating = false;
   double _progress = 0.0;
   String _progressMessage = '';
@@ -25,7 +31,6 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
   @override
   void dispose() {
     _fileNameController.dispose();
-    _passwordController.dispose();
     _watermarkTextController.dispose();
     super.dispose();
   }
@@ -42,12 +47,15 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
       final notifier = ref.read(pdfSettingsProvider.notifier);
 
       await notifier.updateSettings(
-        password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
-        watermarkText: _watermarkTextController.text.isNotEmpty ? _watermarkTextController.text : null,
+        watermarkText: _watermarkTextController.text.isNotEmpty
+            ? _watermarkTextController.text
+            : null,
       );
 
       // Use effective paths from WorkspaceState
-      final imagePaths = workspaceState.pages.map((p) => p.effectivePath).toList();
+      final imagePaths = workspaceState.pages
+          .map((p) => p.effectivePath)
+          .toList();
 
       setState(() {
         _progress = 0.3;
@@ -69,6 +77,23 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
 
       setState(() {
         _progress = 1.0;
+        _progressMessage = 'Saving document to database...';
+      });
+
+      // Save to Hive DocumentRepository to appear in the dashboard
+      final file = File(pdfPath);
+      final documentModel = DocumentModel(
+        id: const Uuid().v4(),
+        filePath: pdfPath,
+        fileName: _fileNameController.text,
+        createdAt: DateTime.now(),
+        sizeInBytes: file.lengthSync(),
+        pageCount: imagePaths.length,
+      );
+      await ref.read(documentListProvider.notifier).addDocument(documentModel);
+
+      setState(() {
+        _progress = 1.0;
         _progressMessage = 'Complete!';
       });
 
@@ -82,20 +107,20 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
           isScrollControlled: true,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           shape: const RoundedRectangleBorder(
-             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
           builder: (context) => PostGenerationDashboard(
-             pdfPath: pdfPath,
-             fileName: _fileNameController.text,
-             imagePaths: imagePaths,
+            pdfPath: pdfPath,
+            fileName: _fileNameController.text,
+            imagePaths: imagePaths,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error generating PDF: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error generating PDF: $e')));
       }
     } finally {
       if (mounted) {
@@ -104,7 +129,11 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
     }
   }
 
-  void _showColorPicker(BuildContext context, Color currentColor, Function(Color) onColorChanged) {
+  void _showColorPicker(
+    BuildContext context,
+    Color currentColor,
+    Function(Color) onColorChanged,
+  ) {
     showDialog(
       context: context,
       builder: (context) {
@@ -146,10 +175,17 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
         return Stack(
           children: [
             Container(
-              padding: EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: MediaQuery.of(context).viewInsets.bottom + 16.0),
+              padding: EdgeInsets.only(
+                left: 16.0,
+                right: 16.0,
+                top: 16.0,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16.0,
+              ),
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
               ),
               child: Column(
                 children: [
@@ -162,7 +198,10 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const Text('PDF Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'PDF Settings',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 16),
                   Expanded(
                     child: ListView(
@@ -203,21 +242,15 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
                           settings.imageQuality.name,
                           ImageQuality.values.map((e) => e.name).toList(),
                           (val) {
-                            final quality = ImageQuality.values.firstWhere((e) => e.name == val);
+                            final quality = ImageQuality.values.firstWhere(
+                              (e) => e.name == val,
+                            );
                             notifier.updateSettings(imageQuality: quality);
                           },
                         ),
                         const Divider(),
                         _buildSectionHeader('Security & Watermark'),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: 'PDF Password (Optional)',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.lock),
-                          ),
-                        ),
+
                         const SizedBox(height: 16),
                         TextField(
                           controller: _watermarkTextController,
@@ -232,9 +265,15 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
                           ListTile(
                             title: const Text('Watermark Color'),
                             trailing: GestureDetector(
-                              onTap: () => _showColorPicker(context, settings.watermarkColor, (color) {
-                                notifier.updateSettings(watermarkColor: color);
-                              }),
+                              onTap: () => _showColorPicker(
+                                context,
+                                settings.watermarkColor,
+                                (color) {
+                                  notifier.updateSettings(
+                                    watermarkColor: color,
+                                  );
+                                },
+                              ),
                               child: Container(
                                 width: 32,
                                 height: 32,
@@ -251,28 +290,32 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
                             settings.watermarkOpacity,
                             0.1,
                             1.0,
-                            (val) => notifier.updateSettings(watermarkOpacity: val),
+                            (val) =>
+                                notifier.updateSettings(watermarkOpacity: val),
                           ),
                           _buildSliderRow(
                             'Size',
                             settings.watermarkSize,
                             10.0,
                             100.0,
-                            (val) => notifier.updateSettings(watermarkSize: val),
+                            (val) =>
+                                notifier.updateSettings(watermarkSize: val),
                           ),
                           _buildSliderRow(
                             'Angle',
                             settings.watermarkAngle,
                             -90.0,
                             90.0,
-                            (val) => notifier.updateSettings(watermarkAngle: val),
+                            (val) =>
+                                notifier.updateSettings(watermarkAngle: val),
                           ),
                         ],
                         const Divider(),
                         SwitchListTile(
                           title: const Text('Show Page Numbers'),
                           value: settings.showPageNumbers,
-                          onChanged: (val) => notifier.updateSettings(showPageNumbers: val),
+                          onChanged: (val) =>
+                              notifier.updateSettings(showPageNumbers: val),
                         ),
                         const SizedBox(height: 80), // Padding for bottom button
                       ],
@@ -288,7 +331,10 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
               child: FilledButton.icon(
                 onPressed: _isGenerating ? null : _generatePdf,
                 icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('Generate PDF', style: TextStyle(fontSize: 16)),
+                label: const Text(
+                  'Generate PDF',
+                  style: TextStyle(fontSize: 16),
+                ),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -328,12 +374,21 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Text(
         title,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: Colors.blue,
+        ),
       ),
     );
   }
 
-  Widget _buildDropdownRow(String label, String value, List<String> items, Function(String) onChanged) {
+  Widget _buildDropdownRow(
+    String label,
+    String value,
+    List<String> items,
+    Function(String) onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -342,7 +397,9 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
           Text(label),
           DropdownButton<String>(
             value: items.contains(value) ? value : items.first,
-            items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+            items: items
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
             onChanged: (val) {
               if (val != null) onChanged(val);
             },
@@ -352,7 +409,13 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
     );
   }
 
-  Widget _buildSliderRow(String label, double value, double min, double max, Function(double) onChanged) {
+  Widget _buildSliderRow(
+    String label,
+    double value,
+    double min,
+    double max,
+    Function(double) onChanged,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -360,12 +423,7 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text('$label: ${value.toStringAsFixed(1)}'),
         ),
-        Slider(
-          value: value,
-          min: min,
-          max: max,
-          onChanged: onChanged,
-        ),
+        Slider(value: value, min: min, max: max, onChanged: onChanged),
       ],
     );
   }
