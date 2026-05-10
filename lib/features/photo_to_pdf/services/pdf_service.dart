@@ -5,19 +5,14 @@ import 'package:flutter/material.dart' show Color;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:uuid/uuid.dart';
 import 'package:docsathi/features/photo_to_pdf/data/models/pdf_settings_model.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
 
 typedef ProgressCallback = void Function(double progress, String message);
 
 class PdfService {
-  static final _uuid = const Uuid();
-
-  static String generateOutputFilePath(String directoryPath) {
-    return '$directoryPath/DocSathi_${_uuid.v4()}.pdf';
-  }
-
   static PdfColor _getPdfColor(Color color, double opacity) {
     return PdfColor(
       color.r,
@@ -27,29 +22,21 @@ class PdfService {
     );
   }
 
-  static Future<Uint8List> _compressImage(String path, ImageQuality quality) async {
-    if (quality == ImageQuality.original) {
-      return await File(path).readAsBytes();
-    }
-
+  static Future<Uint8List> _compressImage(String path, CompressionLevel compLevel) async {
     int qualityVal;
     int targetWidth;
-    switch (quality) {
-      case ImageQuality.low:
+    switch (compLevel) {
+      case CompressionLevel.max:
         qualityVal = 60;
         targetWidth = 800;
         break;
-      case ImageQuality.medium:
+      case CompressionLevel.balanced:
         qualityVal = 80;
         targetWidth = 1200;
         break;
-      case ImageQuality.high:
+      case CompressionLevel.high:
         qualityVal = 95;
         targetWidth = 2000;
-        break;
-      case ImageQuality.original:
-        qualityVal = 100;
-        targetWidth = 4000;
         break;
     }
 
@@ -69,8 +56,9 @@ class PdfService {
   }
 
   static Future<String> generatePdfFromImages({
-    required List<String> imagePaths,
+    required List<DocumentPage> pages,
     required PdfSettingsModel settings,
+    required CompressionLevel compressionLevel,
     ProgressCallback? onProgress,
   }) async {
     // Current version of `pdf` package doesn't support password protection easily via widgets Document
@@ -99,14 +87,22 @@ class PdfService {
       margin = 0.0;
     }
 
-    final totalImages = imagePaths.length;
+    final totalImages = pages.length;
 
     for (int i = 0; i < totalImages; i++) {
-      final imagePath = imagePaths[i];
+      final page = pages[i];
 
-      onProgress?.call((i / totalImages) * 0.8, 'Compressing image ${i + 1} of $totalImages...');
+      onProgress?.call((i / totalImages) * 0.8, 'Processing image ${i + 1} of $totalImages...');
 
-      final imageBytes = await _compressImage(imagePath, settings.imageQuality);
+      // 1. Apply Filter (in background isolate via ImageService if needed, but for simplicity here we do it before compress)
+      String pathToProcess = page.effectivePath;
+      if (page.filterType != FilterType.original) {
+         // Apply filter to high-res image and get temp path
+         pathToProcess = await ImageService.applyColorFilter(pathToProcess, page.filterType.name);
+      }
+
+      // 2. Compress Image based on Engine Level
+      final imageBytes = await _compressImage(pathToProcess, compressionLevel);
       final image = pw.MemoryImage(imageBytes);
 
       PdfPageFormat pageFormat = format;
@@ -169,7 +165,7 @@ class PdfService {
     onProgress?.call(0.9, 'Saving PDF file...');
 
     final outputDir = await getApplicationDocumentsDirectory();
-    final outputFile = File(generateOutputFilePath(outputDir.path));
+    final outputFile = File('${outputDir.path}/DocSathi_${DateTime.now().millisecondsSinceEpoch}.pdf');
     await outputFile.writeAsBytes(await pdf.save());
 
     onProgress?.call(1.0, 'Done!');

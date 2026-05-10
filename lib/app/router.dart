@@ -1,7 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:docsathi/features/home/presentation/home_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/document_dashboard_screen.dart';
-import 'package:docsathi/features/photo_to_pdf/presentation/screens/gateway_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/workspace_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/preview_screen.dart';
 
@@ -16,10 +15,6 @@ final appRouter = GoRouter(
       path: '/photo-to-pdf',
       builder: (context, state) => const DocumentDashboardScreen(),
       routes: [
-        GoRoute(
-          path: 'gateway',
-          builder: (context, state) => const GatewayScreen(),
-        ),
         GoRoute(
           path: 'workspace',
           builder: (context, state) => const WorkspaceScreen(),

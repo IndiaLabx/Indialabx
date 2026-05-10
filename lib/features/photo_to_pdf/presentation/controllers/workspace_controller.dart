@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,21 +6,25 @@ import 'package:image_picker/image_picker.dart';
 import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
 
 enum WorkspaceMode { grid, focus }
-enum ActiveToolTier { none, adjust, layout, filters, quality, watermark }
+enum ActiveToolTier { none, adjust, layout, filters, quality, watermark, security }
+enum FilterType { original, grayscale, enhanced }
+enum CompressionLevel { high, balanced, max }
 
 class DocumentPage {
   final String originalPath;
   final Uint8List thumbnailBytes;
   final String? croppedPath;
   final int rotationAngle;
-  final String colorFilter;
+  final FilterType filterType;
+  final int originalSizeBytes;
 
   DocumentPage({
     required this.originalPath,
     required this.thumbnailBytes,
     this.croppedPath,
     this.rotationAngle = 0,
-    this.colorFilter = 'Original',
+    this.filterType = FilterType.original,
+    this.originalSizeBytes = 0,
   });
 
   String get effectivePath => croppedPath ?? originalPath;
@@ -29,14 +34,16 @@ class DocumentPage {
     Uint8List? thumbnailBytes,
     String? croppedPath,
     int? rotationAngle,
-    String? colorFilter,
+    FilterType? filterType,
+    int? originalSizeBytes,
   }) {
     return DocumentPage(
       originalPath: originalPath ?? this.originalPath,
       thumbnailBytes: thumbnailBytes ?? this.thumbnailBytes,
       croppedPath: croppedPath ?? this.croppedPath,
       rotationAngle: rotationAngle ?? this.rotationAngle,
-      colorFilter: colorFilter ?? this.colorFilter,
+      filterType: filterType ?? this.filterType,
+      originalSizeBytes: originalSizeBytes ?? this.originalSizeBytes,
     );
   }
 }
@@ -49,6 +56,8 @@ class WorkspaceState {
   final String documentName;
   final bool isProcessing;
   final String processingMessage;
+  final CompressionLevel compressionLevel;
+  final bool applyFilterToAll;
 
   WorkspaceState({
     this.pages = const [],
@@ -58,6 +67,8 @@ class WorkspaceState {
     this.documentName = 'DocSathi_Document',
     this.isProcessing = false,
     this.processingMessage = '',
+    this.compressionLevel = CompressionLevel.balanced,
+    this.applyFilterToAll = false,
   });
 
   WorkspaceState copyWith({
@@ -68,6 +79,8 @@ class WorkspaceState {
     String? documentName,
     bool? isProcessing,
     String? processingMessage,
+    CompressionLevel? compressionLevel,
+    bool? applyFilterToAll,
   }) {
     return WorkspaceState(
       pages: pages ?? this.pages,
@@ -77,6 +90,8 @@ class WorkspaceState {
       documentName: documentName ?? this.documentName,
       isProcessing: isProcessing ?? this.isProcessing,
       processingMessage: processingMessage ?? this.processingMessage,
+      compressionLevel: compressionLevel ?? this.compressionLevel,
+      applyFilterToAll: applyFilterToAll ?? this.applyFilterToAll,
     );
   }
 }
@@ -87,12 +102,14 @@ class WorkspaceController extends Notifier<WorkspaceState> {
     return WorkspaceState();
   }
 
-  Future<void> pickImages() async {
+  Future<bool> pickImages() async {
       final picker = ImagePicker();
       final images = await picker.pickMultiImage();
       if (images.isNotEmpty) {
           await addImages(images.map((e) => e.path).toList());
+          return true;
       }
+      return false;
   }
 
   Future<void> addImages(List<String> paths) async {
@@ -101,7 +118,13 @@ class WorkspaceController extends Notifier<WorkspaceState> {
         final thumbnails = await ImageService.generateThumbnailsInIsolate(paths);
         final newPages = <DocumentPage>[];
         for (int i = 0; i < paths.length; i++) {
-            newPages.add(DocumentPage(originalPath: paths[i], thumbnailBytes: thumbnails[i]));
+            final file = File(paths[i]);
+            final size = await file.exists() ? await file.length() : 0;
+            newPages.add(DocumentPage(
+                originalPath: paths[i],
+                thumbnailBytes: thumbnails[i],
+                originalSizeBytes: size,
+            ));
         }
         state = state.copyWith(pages: [...state.pages, ...newPages], isProcessing: false);
     } catch(e) {
@@ -147,6 +170,27 @@ class WorkspaceController extends Notifier<WorkspaceState> {
 
   void setDocumentName(String name) {
     state = state.copyWith(documentName: name);
+  }
+
+  void setCompressionLevel(CompressionLevel level) {
+    state = state.copyWith(compressionLevel: level);
+  }
+
+  void setApplyFilterToAll(bool apply) {
+    state = state.copyWith(applyFilterToAll: apply);
+  }
+
+  void applyFilterToCurrentPage(FilterType filter) {
+    if (state.pages.isEmpty) return;
+
+    if (state.applyFilterToAll) {
+      final newPages = state.pages.map((p) => p.copyWith(filterType: filter)).toList();
+      state = state.copyWith(pages: newPages);
+    } else {
+      final page = state.pages[state.focusedPageIndex];
+      final newPage = page.copyWith(filterType: filter);
+      updatePage(state.focusedPageIndex, newPage);
+    }
   }
 
   void clear() {
