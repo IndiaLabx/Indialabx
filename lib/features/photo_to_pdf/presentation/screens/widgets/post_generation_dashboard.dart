@@ -126,12 +126,14 @@ class PostGenerationDashboard extends StatelessWidget {
                 _buildActionButton(context, Icons.share, 'Share', _sharePdf),
                 _buildActionButton(context, Icons.photo_library, 'Save to Gallery', () => _saveToGallery(context)),
                 _buildActionButton(context, Icons.compress, 'Compress', () {
-                    // Logic to adjust compression in settings
-                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please adjust quality in PDF Settings before generating.')),
+                    );
                 }),
                 _buildActionButton(context, Icons.lock, 'Lock', () {
-                    // Logic to open password input
-                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please set password in PDF Settings before generating.')),
+                    );
                 }),
               ],
             ),

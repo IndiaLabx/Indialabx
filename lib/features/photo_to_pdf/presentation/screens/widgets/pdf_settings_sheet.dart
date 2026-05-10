@@ -146,7 +146,7 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
         return Stack(
           children: [
             Container(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: MediaQuery.of(context).viewInsets.bottom + 16.0),
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
