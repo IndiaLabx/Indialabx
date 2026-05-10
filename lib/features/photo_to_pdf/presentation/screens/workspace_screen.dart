@@ -175,7 +175,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             )
           else if (workspaceState.mode == WorkspaceMode.grid)
             Padding(
-              padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0, bottom: 160.0), // Padding for toolbars
+              padding: EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0, bottom: workspaceState.activeTool == ActiveToolTier.none ? 80.0 : 160.0), // Padding for toolbars
               child: ReorderableGridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
@@ -203,7 +203,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           else
             // Focus Mode: Swipeable Pager
             Padding(
-               padding: const EdgeInsets.only(bottom: 160.0),
+               padding: EdgeInsets.only(bottom: workspaceState.activeTool == ActiveToolTier.none ? 80.0 : 160.0),
                child: PageView.builder(
                  controller: _pageController,
                  itemCount: workspaceState.pages.length,
@@ -221,7 +221,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                          clipBehavior: Clip.antiAlias,
                          child: Image.memory(
                             page.thumbnailBytes,
-                            fit: BoxFit.contain, // Match grid view for smooth hero animation
+                            fit: BoxFit.cover, // Match grid view for smooth hero animation
                          ),
                       ),
                     );
@@ -273,13 +273,15 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         ],
       ),
       floatingActionButton: workspaceState.pages.isNotEmpty
-          ? FloatingActionButton.extended(
+          ? Padding(padding: EdgeInsets.only(bottom: workspaceState.activeTool == ActiveToolTier.none ? 60 : 140), child: FloatingActionButton.extended(
               onPressed: _showSettingsSheet,
               icon: const Icon(Icons.picture_as_pdf),
               label: const Text('Create PDF'),
-            )
+            ))
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      // Shift FAB up to prevent overlap with FluidDeck
+      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
     );
   }
 }
@@ -311,9 +313,19 @@ class _ImageGridItem extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               Image.memory(
-                page.thumbnailBytes,
-                fit: BoxFit.cover, // Grid uses cover
-              ),
+  page.thumbnailBytes,
+  fit: BoxFit.cover,
+  errorBuilder: (context, error, stackTrace) => const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.broken_image, color: Colors.grey, size: 48),
+                                  SizedBox(height: 8),
+                                  Text('Image Error', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+),
               Positioned(
                 top: 4,
                 left: 4,
