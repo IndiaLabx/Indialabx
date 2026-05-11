@@ -95,28 +95,45 @@ class PdfService {
     }
 
     final totalImages = pages.length;
+    final List<pw.MemoryImage> compressedImages = [];
+    const int batchSize = 4;
 
-    for (int i = 0; i < totalImages; i++) {
-      final page = pages[i];
+    for (int i = 0; i < totalImages; i += batchSize) {
+      final end = min(i + batchSize, totalImages);
+      final batch = pages.sublist(i, end);
 
       onProgress?.call(
-        (i / totalImages) * 0.8,
-        'Processing image ${i + 1} of $totalImages...',
+        (i / totalImages) * 0.4,
+        'Processing images ${i + 1} to $end of $totalImages...',
       );
 
-      // 1. Apply Filter (in background isolate via ImageService if needed, but for simplicity here we do it before compress)
-      String pathToProcess = page.effectivePath;
-      if (page.filterType != FilterType.original) {
-        // Apply filter to high-res image and get temp path
-        pathToProcess = await ImageService.applyColorFilter(
+      final batchFutures = batch.map((page) async {
+        String pathToProcess = page.effectivePath;
+        if (page.filterType != FilterType.original) {
+          // Apply filter to high-res image and get temp path
+          pathToProcess = await ImageService.applyColorFilter(
+            pathToProcess,
+            page.filterType.name,
+          );
+        }
+        final imageBytes = await _compressImage(
           pathToProcess,
-          page.filterType.name,
+          compressionLevel,
         );
-      }
+        return pw.MemoryImage(imageBytes);
+      });
 
-      // 2. Compress Image based on Engine Level
-      final imageBytes = await _compressImage(pathToProcess, compressionLevel);
-      final image = pw.MemoryImage(imageBytes);
+      final batchResults = await Future.wait(batchFutures);
+      compressedImages.addAll(batchResults);
+    }
+
+    for (int i = 0; i < totalImages; i++) {
+      onProgress?.call(
+        0.4 + (i / totalImages) * 0.4,
+        'Building page ${i + 1} of $totalImages...',
+      );
+
+      final image = compressedImages[i];
 
       PdfPageFormat pageFormat = format;
       if (settings.pageSize == 'Fit') {
