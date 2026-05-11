@@ -20,7 +20,9 @@ class PreviewScreen extends ConsumerWidget {
             icon: const Icon(Icons.share),
             onPressed: () async {
               // ignore: deprecated_member_use
-              await Share.shareXFiles([XFile(pdfPath)], text: 'Here is my document from DocSathi!');
+              await Share.shareXFiles([
+                XFile(pdfPath),
+              ], text: 'Here is my document from DocSathi!');
             },
           ),
         ],

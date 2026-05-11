@@ -6,7 +6,8 @@ class DocumentRepository {
   final Box<DocumentModel> _box = Hive.box<DocumentModel>('documents');
 
   List<DocumentModel> getAllDocuments() {
-    return _box.values.toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return _box.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   Future<void> saveDocument(DocumentModel document) async {

@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:docsathi/features/photo_to_pdf/data/models/pdf_settings_model.dart';
 import 'package:docsathi/features/photo_to_pdf/data/repositories/pdf_settings_repository.dart';
 
-final pdfSettingsRepositoryProvider = Provider((ref) => PdfSettingsRepository());
+final pdfSettingsRepositoryProvider = Provider(
+  (ref) => PdfSettingsRepository(),
+);
 
-final pdfSettingsProvider = NotifierProvider<PdfSettingsNotifier, PdfSettingsModel>(() {
-  return PdfSettingsNotifier();
-});
+final pdfSettingsProvider =
+    NotifierProvider<PdfSettingsNotifier, PdfSettingsModel>(() {
+      return PdfSettingsNotifier();
+    });
 
 class PdfSettingsNotifier extends Notifier<PdfSettingsModel> {
   @override
