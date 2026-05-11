@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,6 +5,7 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/pdf_settings_sheet.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/fluid_deck.dart';
+import 'package:go_router/go_router.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
   const WorkspaceScreen({super.key});
@@ -23,10 +23,13 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final workspaceState = ref.read(workspaceProvider);
       if (workspaceState.pages.isEmpty) {
-        ref.read(workspaceProvider.notifier).pickImages();
+        final didPick = await ref.read(workspaceProvider.notifier).pickImages();
+        if (!didPick && mounted) {
+           context.go('/photo-to-pdf');
+        }
       }
       _nameController.text = workspaceState.documentName;
     });
@@ -53,25 +56,36 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => const PdfSettingsSheet(),
     );
   }
 
   String _calculateEstimatedSize(WorkspaceState state) {
-    if (state.pages.isEmpty) return '0 KB';
-    int totalBytes = 0;
-    for (final page in state.pages) {
-      final file = File(page.effectivePath);
-      if (file.existsSync()) {
-        totalBytes += file.lengthSync();
-      }
+    if (state.pages.isEmpty) return '0 B';
+
+    int totalOriginalBytes = 0;
+    for (var page in state.pages) {
+      totalOriginalBytes += page.originalSizeBytes;
     }
-    // Assume high quality compression factor of 0.9 for display
-    final estBytes = totalBytes * 0.9;
-    if (estBytes < 1024 * 1024) {
-      return '${(estBytes / 1024).toStringAsFixed(0)} KB';
+
+    double compressionFactor = 1.0;
+    switch(state.compressionLevel) {
+      case CompressionLevel.high:
+        compressionFactor = 0.8;
+        break;
+      case CompressionLevel.balanced:
+        compressionFactor = 0.4;
+        break;
+      case CompressionLevel.max:
+        compressionFactor = 0.15;
+        break;
     }
-    return '${(estBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+
+    final estimatedBytes = (totalOriginalBytes * compressionFactor).toInt();
+
+    if (estimatedBytes < 1024 * 1024) return '${(estimatedBytes / 1024).toStringAsFixed(0)} KB';
+    return '${(estimatedBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   @override
@@ -175,7 +189,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             )
           else if (workspaceState.mode == WorkspaceMode.grid)
             Padding(
-              padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0, bottom: 160.0), // Padding for toolbars
+              padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0, bottom: 200.0), // Padding for toolbars
               child: ReorderableGridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
@@ -203,7 +217,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           else
             // Focus Mode: Swipeable Pager
             Padding(
-               padding: const EdgeInsets.only(bottom: 160.0),
+               padding: const EdgeInsets.only(bottom: 200.0),
                child: PageView.builder(
                  controller: _pageController,
                  itemCount: workspaceState.pages.length,
@@ -219,10 +233,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
                          ),
                          clipBehavior: Clip.antiAlias,
-                         child: Image.memory(
-                            page.thumbnailBytes,
-                            fit: BoxFit.contain, // Match grid view for smooth hero animation
-                         ),
+                         child: _FilteredImage(page: page, fit: BoxFit.contain),
                       ),
                     );
                  },
@@ -284,7 +295,47 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 }
 
-class _ImageGridItem extends StatelessWidget {
+class _FilteredImage extends ConsumerWidget {
+  final DocumentPage page;
+  final BoxFit fit;
+
+  const _FilteredImage({required this.page, this.fit = BoxFit.cover});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    Widget image = Image.memory(
+      page.thumbnailBytes,
+      fit: fit,
+    );
+
+    if (page.filterType == FilterType.grayscale) {
+      image = ColorFiltered(
+        colorFilter: const ColorFilter.matrix([
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0.2126, 0.7152, 0.0722, 0, 0,
+          0,      0,      0,      1, 0,
+        ]),
+        child: image,
+      );
+    } else if (page.filterType == FilterType.enhanced) {
+      // Simple contrast/brightness enhancement matrix
+      image = ColorFiltered(
+        colorFilter: const ColorFilter.matrix([
+          1.2, 0,   0,   0, 10,
+          0,   1.2, 0,   0, 10,
+          0,   0,   1.2, 0, 10,
+          0,   0,   0,   1, 0,
+        ]),
+        child: image,
+      );
+    }
+
+    return image;
+  }
+}
+
+class _ImageGridItem extends ConsumerWidget {
   final DocumentPage page;
   final int index;
   final VoidCallback onTap;
@@ -299,7 +350,7 @@ class _ImageGridItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: onTap,
       child: Hero(
@@ -310,10 +361,7 @@ class _ImageGridItem extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.memory(
-                page.thumbnailBytes,
-                fit: BoxFit.cover, // Grid uses cover
-              ),
+              _FilteredImage(page: page, fit: BoxFit.cover),
               Positioned(
                 top: 4,
                 left: 4,
