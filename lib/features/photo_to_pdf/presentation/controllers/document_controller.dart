@@ -4,9 +4,10 @@ import 'package:docsathi/features/photo_to_pdf/data/repositories/document_reposi
 
 final documentRepositoryProvider = Provider((ref) => DocumentRepository());
 
-final documentListProvider = NotifierProvider<DocumentListNotifier, List<DocumentModel>>(() {
-  return DocumentListNotifier();
-});
+final documentListProvider =
+    NotifierProvider<DocumentListNotifier, List<DocumentModel>>(() {
+      return DocumentListNotifier();
+    });
 
 class DocumentListNotifier extends Notifier<List<DocumentModel>> {
   @override

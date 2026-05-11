@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:printing/printing.dart';
+import 'package:docsathi/core/utils/file_security.dart';
 import 'dart:io';
 
 class PreviewScreen extends ConsumerWidget {
@@ -19,8 +20,22 @@ class PreviewScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () async {
-              // ignore: deprecated_member_use
-              await Share.shareXFiles([XFile(pdfPath)], text: 'Here is my document from DocSathi!');
+              if (await FileSecurity.isPathSafe(pdfPath)) {
+                // ignore: deprecated_member_use
+                await Share.shareXFiles([
+                  XFile(pdfPath),
+                ], text: 'Here is my document from DocSathi!');
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Error: File cannot be shared for security reasons.',
+                      ),
+                    ),
+                  );
+                }
+              }
             },
           ),
         ],

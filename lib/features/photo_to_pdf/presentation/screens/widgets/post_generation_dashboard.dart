@@ -23,7 +23,9 @@ class PostGenerationDashboard extends StatelessWidget {
 
   void _sharePdf() async {
     // ignore: deprecated_member_use
-    await Share.shareXFiles([XFile(pdfPath)], text: 'Here is my document from DocSathi!');
+    await Share.shareXFiles([
+      XFile(pdfPath),
+    ], text: 'Here is my document from DocSathi!');
   }
 
   void _saveToGallery(BuildContext context) async {
@@ -38,30 +40,34 @@ class PostGenerationDashboard extends StatelessWidget {
           await Gal.putImage(path);
         }
         if (context.mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Images saved to gallery successfully!')),
-           );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Images saved to gallery successfully!'),
+            ),
+          );
         }
       }
     } on GalException catch (e) {
-        if (context.mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to save: ${e.type.message}')),
-           );
-        }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save: ${e.type.message}')),
+        );
+      }
     } catch (e) {
-        if (context.mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: $e')),
-           );
-        }
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final file = File(pdfPath);
-    final sizeStr = file.existsSync() ? _formatSize(file.lengthSync()) : 'Unknown Size';
+    final sizeStr = file.existsSync()
+        ? _formatSize(file.lengthSync())
+        : 'Unknown Size';
 
     return SafeArea(
       child: Padding(
@@ -71,27 +77,33 @@ class PostGenerationDashboard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
-               child: Container(
-                 width: 40,
-                 height: 4,
-                 margin: const EdgeInsets.only(bottom: 16),
-                 decoration: BoxDecoration(
-                   color: Colors.grey.shade400,
-                   borderRadius: BorderRadius.circular(2),
-                 ),
-               ),
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
 
             // Header Card
             Card(
               elevation: 0,
               color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.green, size: 48),
+                    const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 48,
+                    ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
@@ -99,7 +111,10 @@ class PostGenerationDashboard extends StatelessWidget {
                         children: [
                           Text(
                             fileName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -124,14 +139,29 @@ class PostGenerationDashboard extends StatelessWidget {
               alignment: WrapAlignment.spaceEvenly,
               children: [
                 _buildActionButton(context, Icons.share, 'Share', _sharePdf),
-                _buildActionButton(context, Icons.photo_library, 'Save to Gallery', () => _saveToGallery(context)),
+                _buildActionButton(
+                  context,
+                  Icons.photo_library,
+                  'Save to Gallery',
+                  () => _saveToGallery(context),
+                ),
                 _buildActionButton(context, Icons.compress, 'Compress', () {
-                    // Logic to adjust compression in settings
-                    Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please adjust quality in PDF Settings before generating.',
+                      ),
+                    ),
+                  );
                 }),
                 _buildActionButton(context, Icons.lock, 'Lock', () {
-                    // Logic to open password input
-                    Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please set password in PDF Settings before generating.',
+                      ),
+                    ),
+                  );
                 }),
               ],
             ),
@@ -146,7 +176,7 @@ class PostGenerationDashboard extends StatelessWidget {
               icon: const Icon(Icons.edit),
               label: const Text('Back to Editor'),
               style: FilledButton.styleFrom(
-                 padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
           ],
@@ -155,7 +185,12 @@ class PostGenerationDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+  Widget _buildActionButton(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -170,7 +205,9 @@ class PostGenerationDashboard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 shape: BoxShape.circle,
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 4),
+                ],
               ),
               child: Icon(icon, color: Theme.of(context).primaryColor),
             ),

@@ -28,7 +28,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
       if (workspaceState.pages.isEmpty) {
         final didPick = await ref.read(workspaceProvider.notifier).pickImages();
         if (!didPick && mounted) {
-           context.go('/photo-to-pdf');
+          context.go('/photo-to-pdf');
         }
       }
       _nameController.text = workspaceState.documentName;
@@ -39,7 +39,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         setState(() {
           _isEditingName = false;
         });
-        ref.read(workspaceProvider.notifier).setDocumentName(_nameController.text);
+        ref
+            .read(workspaceProvider.notifier)
+            .setDocumentName(_nameController.text);
       }
     });
   }
@@ -62,7 +64,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   }
 
   String _calculateEstimatedSize(WorkspaceState state) {
-    if (state.pages.isEmpty) return '0 B';
+    if (state.pages.isEmpty) {
+      return '0 B';
+    }
 
     int totalOriginalBytes = 0;
     for (var page in state.pages) {
@@ -70,7 +74,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     }
 
     double compressionFactor = 1.0;
-    switch(state.compressionLevel) {
+    switch (state.compressionLevel) {
       case CompressionLevel.high:
         compressionFactor = 0.8;
         break;
@@ -84,7 +88,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 
     final estimatedBytes = (totalOriginalBytes * compressionFactor).toInt();
 
-    if (estimatedBytes < 1024 * 1024) return '${(estimatedBytes / 1024).toStringAsFixed(0)} KB';
+    if (estimatedBytes < 1024 * 1024) {
+      return '${(estimatedBytes / 1024).toStringAsFixed(0)} KB';
+    }
     return '${(estimatedBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
@@ -118,7 +124,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                         isDense: true,
                         contentPadding: EdgeInsets.zero,
                       ),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                       onSubmitted: (value) {
                         setState(() {
                           _isEditingName = false;
@@ -135,7 +144,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                       },
                       child: Text(
                         workspaceState.documentName,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -177,7 +189,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 children: [
                   const Icon(Icons.photo_library, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  const Text('No photos selected', style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    'No photos selected',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 16),
                   FilledButton.icon(
                     onPressed: () => notifier.pickImages(),
@@ -189,7 +204,12 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             )
           else if (workspaceState.mode == WorkspaceMode.grid)
             Padding(
-              padding: const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0, bottom: 200.0), // Padding for toolbars
+              padding: const EdgeInsets.only(
+                left: 8.0,
+                right: 8.0,
+                top: 8.0,
+                bottom: 200.0,
+              ), // Padding for toolbars
               child: ReorderableGridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
@@ -207,6 +227,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     onTap: () {
                       notifier.setFocusedPage(index);
                       notifier.setMode(WorkspaceMode.focus);
+                      _pageController.dispose();
                       _pageController = PageController(initialPage: index);
                     },
                     onDelete: () => notifier.removeImage(index),
@@ -217,48 +238,60 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           else
             // Focus Mode: Swipeable Pager
             Padding(
-               padding: const EdgeInsets.only(bottom: 200.0),
-               child: PageView.builder(
-                 controller: _pageController,
-                 itemCount: workspaceState.pages.length,
-                 onPageChanged: (index) => notifier.setFocusedPage(index),
-                 itemBuilder: (context, index) {
-                    final page = workspaceState.pages[index];
-                    return Hero(
-                      tag: 'hero_workspace_image_${index}_${page.effectivePath}',
-                      child: Container(
-                         margin: const EdgeInsets.all(16),
-                         decoration: BoxDecoration(
-                           borderRadius: BorderRadius.circular(16),
-                           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
-                         ),
-                         clipBehavior: Clip.antiAlias,
-                         child: _FilteredImage(page: page, fit: BoxFit.contain),
+              padding: const EdgeInsets.only(bottom: 200.0),
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: workspaceState.pages.length,
+                onPageChanged: (index) => notifier.setFocusedPage(index),
+                itemBuilder: (context, index) {
+                  final page = workspaceState.pages[index];
+                  return Hero(
+                    tag: 'hero_workspace_image_${index}_${page.effectivePath}',
+                    child: Container(
+                      margin: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 10),
+                        ],
                       ),
-                    );
-                 },
-               ),
+                      clipBehavior: Clip.antiAlias,
+                      child: _FilteredImage(
+                        page: page,
+                        fit: BoxFit.contain,
+                        useHighRes: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
 
           if (workspaceState.mode == WorkspaceMode.focus)
-             Positioned(
-               top: 16,
-               left: 0,
-               right: 0,
-               child: Center(
-                 child: Container(
-                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                   decoration: BoxDecoration(
-                     color: Colors.black54,
-                     borderRadius: BorderRadius.circular(20),
-                   ),
-                   child: Text(
-                     'Page ${workspaceState.focusedPageIndex + 1} of ${workspaceState.pages.length}',
-                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                   ),
-                 ),
-               ),
-             ),
+            Positioned(
+              top: 16,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Page ${workspaceState.focusedPageIndex + 1} of ${workspaceState.pages.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
           const FluidDeck(),
 
@@ -284,10 +317,19 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         ],
       ),
       floatingActionButton: workspaceState.pages.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: _showSettingsSheet,
-              icon: const Icon(Icons.picture_as_pdf),
-              label: const Text('Create PDF'),
+          ? AnimatedPadding(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              padding: EdgeInsets.only(
+                bottom: workspaceState.activeTool == ActiveToolTier.none
+                    ? 70.0
+                    : 230.0,
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: _showSettingsSheet,
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text('Create PDF'),
+              ),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -298,23 +340,46 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 class _FilteredImage extends ConsumerWidget {
   final DocumentPage page;
   final BoxFit fit;
+  final bool useHighRes;
 
-  const _FilteredImage({required this.page, this.fit = BoxFit.cover});
+  const _FilteredImage({
+    required this.page,
+    this.fit = BoxFit.cover,
+    this.useHighRes = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Widget image = Image.memory(
-      page.thumbnailBytes,
-      fit: fit,
-    );
+    Widget image;
+    if (useHighRes || page.thumbnailBytes.isEmpty) {
+      image = Image.file(File(page.effectivePath), fit: fit);
+    } else {
+      image = Image.memory(page.thumbnailBytes, fit: fit);
+    }
 
     if (page.filterType == FilterType.grayscale) {
       image = ColorFiltered(
         colorFilter: const ColorFilter.matrix([
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0.2126, 0.7152, 0.0722, 0, 0,
-          0,      0,      0,      1, 0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0,
+          0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0,
+          0,
+          0.2126,
+          0.7152,
+          0.0722,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
         ]),
         child: image,
       );
@@ -322,10 +387,26 @@ class _FilteredImage extends ConsumerWidget {
       // Simple contrast/brightness enhancement matrix
       image = ColorFiltered(
         colorFilter: const ColorFilter.matrix([
-          1.2, 0,   0,   0, 10,
-          0,   1.2, 0,   0, 10,
-          0,   0,   1.2, 0, 10,
-          0,   0,   0,   1, 0,
+          1.2,
+          0,
+          0,
+          0,
+          10,
+          0,
+          1.2,
+          0,
+          0,
+          10,
+          0,
+          0,
+          1.2,
+          0,
+          10,
+          0,
+          0,
+          0,
+          1,
+          0,
         ]),
         child: image,
       );
@@ -373,7 +454,11 @@ class _ImageGridItem extends ConsumerWidget {
                   ),
                   child: Text(
                     '${index + 1}',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),

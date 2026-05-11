@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/document_controller.dart';
 import 'package:intl/intl.dart';
+import 'package:docsathi/core/utils/file_security.dart';
 
 class DocumentDashboardScreen extends ConsumerWidget {
   const DocumentDashboardScreen({super.key});
@@ -19,24 +20,30 @@ class DocumentDashboardScreen extends ConsumerWidget {
     final documents = ref.watch(documentListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Photo to PDF'),
-      ),
+      appBar: AppBar(title: const Text('Photo to PDF')),
       body: documents.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.description_outlined, size: 64, color: Theme.of(context).disabledColor),
+                  Icon(
+                    Icons.description_outlined,
+                    size: 64,
+                    color: Theme.of(context).disabledColor,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'No documents yet',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Theme.of(context).disabledColor),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).disabledColor,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Tap + to create a new PDF',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).disabledColor),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).disabledColor,
+                    ),
                   ),
                 ],
               ),
@@ -46,10 +53,20 @@ class DocumentDashboardScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final doc = documents[index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: ExpansionTile(
-                    leading: const Icon(Icons.picture_as_pdf, color: Colors.red, size: 36),
-                    title: Text(doc.fileName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    leading: const Icon(
+                      Icons.picture_as_pdf,
+                      color: Colors.red,
+                      size: 36,
+                    ),
+                    title: Text(
+                      doc.fileName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     subtitle: Text(
                       '${DateFormat.yMMMd().format(doc.createdAt)} • ${_formatSize(doc.sizeInBytes)} • ${doc.pageCount} Pages',
                       style: Theme.of(context).textTheme.bodySmall,
@@ -62,29 +79,53 @@ class DocumentDashboardScreen extends ConsumerWidget {
                           children: [
                             TextButton.icon(
                               onPressed: () {
-                                context.push('/photo-to-pdf/preview', extra: doc.filePath);
+                                context.push(
+                                  '/photo-to-pdf/preview',
+                                  extra: doc.filePath,
+                                );
                               },
                               icon: const Icon(Icons.visibility),
                               label: const Text('View'),
                             ),
                             TextButton.icon(
                               onPressed: () async {
-                                // ignore: deprecated_member_use
-                                await Share.shareXFiles([XFile(doc.filePath)], text: 'Here is my document!');
+                                if (await FileSecurity.isPathSafe(
+                                  doc.filePath,
+                                )) {
+                                  // ignore: deprecated_member_use
+                                  await Share.shareXFiles([
+                                    XFile(doc.filePath),
+                                  ], text: 'Here is my document!');
+                                } else {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Error: File cannot be shared for security reasons.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
                               },
                               icon: const Icon(Icons.share),
                               label: const Text('Share'),
                             ),
                             TextButton.icon(
                               onPressed: () {
-                                ref.read(documentListProvider.notifier).deleteDocument(doc.id);
+                                ref
+                                    .read(documentListProvider.notifier)
+                                    .deleteDocument(doc.id);
                               },
                               icon: const Icon(Icons.delete, color: Colors.red),
-                              label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                              label: const Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
                             ),
                           ],
                         ),
-                      )
+                      ),
                     ],
                   ),
                 );

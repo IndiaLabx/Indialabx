@@ -113,7 +113,10 @@ class WorkspaceController extends Notifier<WorkspaceState> {
   }
 
   Future<void> addImages(List<String> paths) async {
-    state = state.copyWith(isProcessing: true, processingMessage: 'Loading images...');
+    state = state.copyWith(
+      isProcessing: true,
+      processingMessage: 'Loading images...',
+    );
     try {
         final thumbnails = await ImageService.generateThumbnailsInIsolate(paths);
         final newPages = <DocumentPage>[];
@@ -198,6 +201,8 @@ class WorkspaceController extends Notifier<WorkspaceState> {
   }
 }
 
-final workspaceProvider = NotifierProvider<WorkspaceController, WorkspaceState>(() {
-  return WorkspaceController();
-});
+final workspaceProvider = NotifierProvider<WorkspaceController, WorkspaceState>(
+  () {
+    return WorkspaceController();
+  },
+);

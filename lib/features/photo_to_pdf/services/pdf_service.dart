@@ -14,15 +14,13 @@ typedef ProgressCallback = void Function(double progress, String message);
 
 class PdfService {
   static PdfColor _getPdfColor(Color color, double opacity) {
-    return PdfColor(
-      color.r,
-      color.g,
-      color.b,
-      opacity,
-    );
+    return PdfColor(color.r, color.g, color.b, opacity);
   }
 
-  static Future<Uint8List> _compressImage(String path, CompressionLevel compLevel) async {
+  static Future<Uint8List> _compressImage(
+    String path,
+    CompressionLevel compLevel,
+  ) async {
     int qualityVal;
     int targetWidth;
     switch (compLevel) {
@@ -92,13 +90,19 @@ class PdfService {
     for (int i = 0; i < totalImages; i++) {
       final page = pages[i];
 
-      onProgress?.call((i / totalImages) * 0.8, 'Processing image ${i + 1} of $totalImages...');
+      onProgress?.call(
+        (i / totalImages) * 0.8,
+        'Processing image ${i + 1} of $totalImages...',
+      );
 
       // 1. Apply Filter (in background isolate via ImageService if needed, but for simplicity here we do it before compress)
       String pathToProcess = page.effectivePath;
       if (page.filterType != FilterType.original) {
-         // Apply filter to high-res image and get temp path
-         pathToProcess = await ImageService.applyColorFilter(pathToProcess, page.filterType.name);
+        // Apply filter to high-res image and get temp path
+        pathToProcess = await ImageService.applyColorFilter(
+          pathToProcess,
+          page.filterType.name,
+        );
       }
 
       // 2. Compress Image based on Engine Level
@@ -107,7 +111,10 @@ class PdfService {
 
       PdfPageFormat pageFormat = format;
       if (settings.pageSize == 'Fit') {
-        pageFormat = PdfPageFormat(image.width!.toDouble(), image.height!.toDouble());
+        pageFormat = PdfPageFormat(
+          image.width!.toDouble(),
+          image.height!.toDouble(),
+        );
         if (settings.orientation == 'Landscape') {
           pageFormat = pageFormat.landscape;
         }
@@ -126,19 +133,21 @@ class PdfService {
               alignment: pw.Alignment.center,
               children: [
                 // Main Image
-                pw.Center(
-                  child: pw.Image(image, fit: pw.BoxFit.contain),
-                ),
+                pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain)),
 
                 // Watermark
-                if (settings.watermarkText != null && settings.watermarkText!.isNotEmpty)
+                if (settings.watermarkText != null &&
+                    settings.watermarkText!.isNotEmpty)
                   pw.Center(
                     child: pw.Transform.rotate(
                       angle: settings.watermarkAngle * pi / 180,
                       child: pw.Text(
                         settings.watermarkText!,
                         style: pw.TextStyle(
-                          color: _getPdfColor(settings.watermarkColor, settings.watermarkOpacity),
+                          color: _getPdfColor(
+                            settings.watermarkColor,
+                            settings.watermarkOpacity,
+                          ),
                           fontSize: settings.watermarkSize,
                           fontWeight: pw.FontWeight.bold,
                         ),
@@ -165,7 +174,9 @@ class PdfService {
     onProgress?.call(0.9, 'Saving PDF file...');
 
     final outputDir = await getApplicationDocumentsDirectory();
-    final outputFile = File('${outputDir.path}/DocSathi_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    final outputFile = File(
+      '${outputDir.path}/DocSathi_${DateTime.now().millisecondsSinceEpoch}.pdf',
+    );
     await outputFile.writeAsBytes(await pdf.save());
 
     onProgress?.call(1.0, 'Done!');
