@@ -5,6 +5,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path/path.dart' as p;
 
 class ImageService {
   static final _uuid = const Uuid();
@@ -31,7 +32,7 @@ class ImageService {
     img.Image rotatedImage = img.copyRotate(originalImage, angle: angle);
 
     final tempDir = await getTemporaryDirectory();
-    final newPath = '${tempDir.path}/${_uuid.v4()}.jpg';
+    final newPath = p.join(tempDir.path, '${_uuid.v4()}.jpg');
     final newFile = File(newPath);
     await newFile.writeAsBytes(img.encodeJpg(rotatedImage));
 
@@ -62,7 +63,7 @@ class ImageService {
     }
 
     final tempDir = await getTemporaryDirectory();
-    final newPath = '${tempDir.path}/${_uuid.v4()}.jpg';
+    final newPath = p.join(tempDir.path, '${_uuid.v4()}.jpg');
     final newFile = File(newPath);
     await newFile.writeAsBytes(img.encodeJpg(filteredImage));
 
