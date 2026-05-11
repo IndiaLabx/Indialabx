@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:gal/gal.dart';
 
-class PostGenerationDashboard extends StatelessWidget {
+class PostGenerationDashboard extends StatefulWidget {
   final String pdfPath;
   final String fileName;
   final List<String> imagePaths;
@@ -15,16 +15,24 @@ class PostGenerationDashboard extends StatelessWidget {
     required this.imagePaths,
   });
 
-  String _formatSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+  @override
+  State<PostGenerationDashboard> createState() =>
+      _PostGenerationDashboardState();
+}
+
+class _PostGenerationDashboardState extends State<PostGenerationDashboard> {
+  late Future<String> _fileSizeFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _fileSizeFuture = _getFileSize(widget.pdfPath);
   }
 
   void _sharePdf() async {
     // ignore: deprecated_member_use
     await Share.shareXFiles([
-      XFile(pdfPath),
+      XFile(widget.pdfPath),
     ], text: 'Here is my document from DocSathi!');
   }
 
@@ -36,7 +44,7 @@ class PostGenerationDashboard extends StatelessWidget {
       }
 
       if (hasAccess) {
-        for (final path in imagePaths) {
+        for (final path in widget.imagePaths) {
           await Gal.putImage(path);
         }
         if (context.mounted) {
@@ -62,13 +70,23 @@ class PostGenerationDashboard extends StatelessWidget {
     }
   }
 
+  static String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
+  }
+
+  static Future<String> _getFileSize(String path) async {
+    final file = File(path);
+    if (await file.exists()) {
+      final bytes = await file.length();
+      return _formatSize(bytes);
+    }
+    return 'Unknown Size';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final file = File(pdfPath);
-    final sizeStr = file.existsSync()
-        ? _formatSize(file.lengthSync())
-        : 'Unknown Size';
-
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -110,7 +128,7 @@ class PostGenerationDashboard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            fileName,
+                            widget.fileName,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -119,9 +137,15 @@ class PostGenerationDashboard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            'Success • $sizeStr',
-                            style: TextStyle(color: Colors.grey.shade700),
+                          FutureBuilder<String>(
+                            future: _fileSizeFuture,
+                            builder: (context, snapshot) {
+                              final sizeStr = snapshot.data ?? 'Calculating...';
+                              return Text(
+                                'Success • $sizeStr',
+                                style: TextStyle(color: Colors.grey.shade700),
+                              );
+                            },
                           ),
                         ],
                       ),
