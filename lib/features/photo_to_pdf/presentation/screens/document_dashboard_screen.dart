@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/document_controller.dart';
 import 'package:intl/intl.dart';
+import 'package:docsathi/core/utils/file_security.dart';
 
 class DocumentDashboardScreen extends ConsumerWidget {
   const DocumentDashboardScreen({super.key});
@@ -88,10 +89,24 @@ class DocumentDashboardScreen extends ConsumerWidget {
                             ),
                             TextButton.icon(
                               onPressed: () async {
-                                // ignore: deprecated_member_use
-                                await Share.shareXFiles([
-                                  XFile(doc.filePath),
-                                ], text: 'Here is my document!');
+                                if (await FileSecurity.isPathSafe(
+                                  doc.filePath,
+                                )) {
+                                  // ignore: deprecated_member_use
+                                  await Share.shareXFiles([
+                                    XFile(doc.filePath),
+                                  ], text: 'Here is my document!');
+                                } else {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Error: File cannot be shared for security reasons.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
                               },
                               icon: const Icon(Icons.share),
                               label: const Text('Share'),
