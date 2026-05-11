@@ -6,8 +6,19 @@ import 'package:image_picker/image_picker.dart';
 import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
 
 enum WorkspaceMode { grid, focus }
-enum ActiveToolTier { none, adjust, layout, filters, quality, watermark, security }
+
+enum ActiveToolTier {
+  none,
+  adjust,
+  layout,
+  filters,
+  quality,
+  watermark,
+  security,
+}
+
 enum FilterType { original, grayscale, enhanced }
+
 enum CompressionLevel { high, balanced, max }
 
 class DocumentPage {
@@ -103,32 +114,40 @@ class WorkspaceController extends Notifier<WorkspaceState> {
   }
 
   Future<bool> pickImages() async {
-      final picker = ImagePicker();
-      final images = await picker.pickMultiImage();
-      if (images.isNotEmpty) {
-          await addImages(images.map((e) => e.path).toList());
-          return true;
-      }
-      return false;
+    final picker = ImagePicker();
+    final images = await picker.pickMultiImage();
+    if (images.isNotEmpty) {
+      await addImages(images.map((e) => e.path).toList());
+      return true;
+    }
+    return false;
   }
 
   Future<void> addImages(List<String> paths) async {
-    state = state.copyWith(isProcessing: true, processingMessage: 'Loading images...');
+    state = state.copyWith(
+      isProcessing: true,
+      processingMessage: 'Loading images...',
+    );
     try {
-        final thumbnails = await ImageService.generateThumbnailsInIsolate(paths);
-        final newPages = <DocumentPage>[];
-        for (int i = 0; i < paths.length; i++) {
-            final file = File(paths[i]);
-            final size = await file.exists() ? await file.length() : 0;
-            newPages.add(DocumentPage(
-                originalPath: paths[i],
-                thumbnailBytes: thumbnails[i],
-                originalSizeBytes: size,
-            ));
-        }
-        state = state.copyWith(pages: [...state.pages, ...newPages], isProcessing: false);
-    } catch(e) {
-        state = state.copyWith(isProcessing: false);
+      final thumbnails = await ImageService.generateThumbnailsInIsolate(paths);
+      final newPages = <DocumentPage>[];
+      for (int i = 0; i < paths.length; i++) {
+        final file = File(paths[i]);
+        final size = await file.exists() ? await file.length() : 0;
+        newPages.add(
+          DocumentPage(
+            originalPath: paths[i],
+            thumbnailBytes: thumbnails[i],
+            originalSizeBytes: size,
+          ),
+        );
+      }
+      state = state.copyWith(
+        pages: [...state.pages, ...newPages],
+        isProcessing: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isProcessing: false);
     }
   }
 
@@ -184,7 +203,9 @@ class WorkspaceController extends Notifier<WorkspaceState> {
     if (state.pages.isEmpty) return;
 
     if (state.applyFilterToAll) {
-      final newPages = state.pages.map((p) => p.copyWith(filterType: filter)).toList();
+      final newPages = state.pages
+          .map((p) => p.copyWith(filterType: filter))
+          .toList();
       state = state.copyWith(pages: newPages);
     } else {
       final page = state.pages[state.focusedPageIndex];
@@ -198,6 +219,8 @@ class WorkspaceController extends Notifier<WorkspaceState> {
   }
 }
 
-final workspaceProvider = NotifierProvider<WorkspaceController, WorkspaceState>(() {
-  return WorkspaceController();
-});
+final workspaceProvider = NotifierProvider<WorkspaceController, WorkspaceState>(
+  () {
+    return WorkspaceController();
+  },
+);

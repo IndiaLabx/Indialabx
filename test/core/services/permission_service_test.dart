@@ -10,16 +10,14 @@ void main() {
   void mockPermissionResponse(int permission, int status) {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-      if (methodCall.method == 'requestPermissions') {
-        final List<dynamic> permissions = methodCall.arguments;
-        if (permissions.contains(permission)) {
-          return {
-            permission: status,
-          };
-        }
-      }
-      return null;
-    });
+          if (methodCall.method == 'requestPermissions') {
+            final List<dynamic> permissions = methodCall.arguments;
+            if (permissions.contains(permission)) {
+              return {permission: status};
+            }
+          }
+          return null;
+        });
   }
 
   tearDown(() {
@@ -69,12 +67,15 @@ void main() {
     });
 
     group('Other Statuses', () {
-      test('requestStoragePermission returns false when permanentlyDenied', () async {
-        // PermissionStatus.permanentlyDenied is 2
-        mockPermissionResponse(15, 2);
-        final result = await PermissionService.requestStoragePermission();
-        expect(result, false);
-      });
+      test(
+        'requestStoragePermission returns false when permanentlyDenied',
+        () async {
+          // PermissionStatus.permanentlyDenied is 2
+          mockPermissionResponse(15, 2);
+          final result = await PermissionService.requestStoragePermission();
+          expect(result, false);
+        },
+      );
 
       test('requestStoragePermission returns false when restricted', () async {
         // PermissionStatus.restricted is 3

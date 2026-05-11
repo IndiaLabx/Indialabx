@@ -17,8 +17,11 @@ class PdfSettingsRepository {
   static const String _watermarkAngleKey = 'pdf_setting_watermark_angle';
 
   PdfSettingsModel getSettings() {
-    final qualityIndex = sharedPreferences.getInt(_imageQualityKey) ?? ImageQuality.medium.index;
-    final quality = ImageQuality.values.length > qualityIndex ? ImageQuality.values[qualityIndex] : ImageQuality.medium;
+    final qualityIndex =
+        sharedPreferences.getInt(_imageQualityKey) ?? ImageQuality.medium.index;
+    final quality = ImageQuality.values.length > qualityIndex
+        ? ImageQuality.values[qualityIndex]
+        : ImageQuality.medium;
 
     return PdfSettingsModel(
       pageSize: sharedPreferences.getString(_pageSizeKey) ?? 'A4',
@@ -26,8 +29,12 @@ class PdfSettingsRepository {
       margin: sharedPreferences.getString(_marginKey) ?? 'None',
       imageQuality: quality,
       showPageNumbers: sharedPreferences.getBool(_showPageNumbersKey) ?? false,
-      watermarkColor: Color(sharedPreferences.getInt(_watermarkColorValueKey) ?? Colors.grey.toARGB32()),
-      watermarkOpacity: sharedPreferences.getDouble(_watermarkOpacityKey) ?? 0.3,
+      watermarkColor: Color(
+        sharedPreferences.getInt(_watermarkColorValueKey) ??
+            Colors.grey.toARGB32(),
+      ),
+      watermarkOpacity:
+          sharedPreferences.getDouble(_watermarkOpacityKey) ?? 0.3,
       watermarkSize: sharedPreferences.getDouble(_watermarkSizeKey) ?? 40.0,
       watermarkAngle: sharedPreferences.getDouble(_watermarkAngleKey) ?? 45.0,
     );
@@ -37,11 +44,29 @@ class PdfSettingsRepository {
     await sharedPreferences.setString(_pageSizeKey, settings.pageSize);
     await sharedPreferences.setString(_orientationKey, settings.orientation);
     await sharedPreferences.setString(_marginKey, settings.margin);
-    await sharedPreferences.setInt(_imageQualityKey, settings.imageQuality.index);
-    await sharedPreferences.setBool(_showPageNumbersKey, settings.showPageNumbers);
-    await sharedPreferences.setInt(_watermarkColorValueKey, settings.watermarkColor.toARGB32());
-    await sharedPreferences.setDouble(_watermarkOpacityKey, settings.watermarkOpacity);
-    await sharedPreferences.setDouble(_watermarkSizeKey, settings.watermarkSize);
-    await sharedPreferences.setDouble(_watermarkAngleKey, settings.watermarkAngle);
+    await sharedPreferences.setInt(
+      _imageQualityKey,
+      settings.imageQuality.index,
+    );
+    await sharedPreferences.setBool(
+      _showPageNumbersKey,
+      settings.showPageNumbers,
+    );
+    await sharedPreferences.setInt(
+      _watermarkColorValueKey,
+      settings.watermarkColor.toARGB32(),
+    );
+    await sharedPreferences.setDouble(
+      _watermarkOpacityKey,
+      settings.watermarkOpacity,
+    );
+    await sharedPreferences.setDouble(
+      _watermarkSizeKey,
+      settings.watermarkSize,
+    );
+    await sharedPreferences.setDouble(
+      _watermarkAngleKey,
+      settings.watermarkAngle,
+    );
   }
 }

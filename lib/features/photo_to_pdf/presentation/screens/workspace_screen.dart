@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -256,7 +257,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                         ],
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: _FilteredImage(page: page, fit: BoxFit.contain),
+                      child: _FilteredImage(
+                        page: page,
+                        fit: BoxFit.contain,
+                        useHighRes: true,
+                      ),
                     ),
                   );
                 },
@@ -313,10 +318,19 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         ],
       ),
       floatingActionButton: workspaceState.pages.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: _showSettingsSheet,
-              icon: const Icon(Icons.picture_as_pdf),
-              label: const Text('Create PDF'),
+          ? AnimatedPadding(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              padding: EdgeInsets.only(
+                bottom: workspaceState.activeTool == ActiveToolTier.none
+                    ? 70.0
+                    : 230.0,
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: _showSettingsSheet,
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text('Create PDF'),
+              ),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -327,12 +341,22 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
 class _FilteredImage extends ConsumerWidget {
   final DocumentPage page;
   final BoxFit fit;
+  final bool useHighRes;
 
-  const _FilteredImage({required this.page, this.fit = BoxFit.cover});
+  const _FilteredImage({
+    required this.page,
+    this.fit = BoxFit.cover,
+    this.useHighRes = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Widget image = Image.memory(page.thumbnailBytes, fit: fit);
+    Widget image;
+    if (useHighRes || page.thumbnailBytes.isEmpty) {
+      image = Image.file(File(page.effectivePath), fit: fit);
+    } else {
+      image = Image.memory(page.thumbnailBytes, fit: fit);
+    }
 
     if (page.filterType == FilterType.grayscale) {
       image = ColorFiltered(

@@ -19,9 +19,12 @@ class PdfSettingsSheet extends ConsumerStatefulWidget {
 }
 
 class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
-  final TextEditingController _fileNameController = TextEditingController(text: 'DocSathi_Document');
+  final TextEditingController _fileNameController = TextEditingController(
+    text: 'DocSathi_Document',
+  );
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _watermarkTextController = TextEditingController();
+  final TextEditingController _watermarkTextController =
+      TextEditingController();
   bool _isGenerating = false;
   double _progress = 0.0;
   String _progressMessage = '';
@@ -46,8 +49,12 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
       final notifier = ref.read(pdfSettingsProvider.notifier);
 
       await notifier.updateSettings(
-        password: _passwordController.text.isNotEmpty ? _passwordController.text : null,
-        watermarkText: _watermarkTextController.text.isNotEmpty ? _watermarkTextController.text : null,
+        password: _passwordController.text.isNotEmpty
+            ? _passwordController.text
+            : null,
+        watermarkText: _watermarkTextController.text.isNotEmpty
+            ? _watermarkTextController.text
+            : null,
       );
 
       // Use effective paths from WorkspaceState
@@ -78,7 +85,9 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
       final docModel = DocumentModel(
         id: const Uuid().v4(),
         filePath: pdfPath,
-        fileName: _fileNameController.text.isNotEmpty ? _fileNameController.text : 'DocSathi_Document',
+        fileName: _fileNameController.text.isNotEmpty
+            ? _fileNameController.text
+            : 'DocSathi_Document',
         createdAt: DateTime.now(),
         sizeInBytes: size,
         pageCount: pages.length,
@@ -112,7 +121,9 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
         setState(() {
           _isGenerating = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error generating PDF: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error generating PDF: $e')));
       }
     }
   }
@@ -134,7 +145,9 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
               ),
               child: Column(
                 children: [
@@ -147,7 +160,10 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const Text('PDF Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'PDF Settings',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 16),
                   Expanded(
                     child: ListView(
@@ -165,7 +181,8 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
                         SwitchListTile(
                           title: const Text('Show Page Numbers'),
                           value: settings.showPageNumbers,
-                          onChanged: (val) => notifier.updateSettings(showPageNumbers: val),
+                          onChanged: (val) =>
+                              notifier.updateSettings(showPageNumbers: val),
                         ),
                         const SizedBox(height: 80), // Padding for bottom button
                       ],
@@ -181,7 +198,10 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
               child: FilledButton.icon(
                 onPressed: _isGenerating ? null : _generatePdf,
                 icon: const Icon(Icons.picture_as_pdf),
-                label: const Text('Generate PDF', style: TextStyle(fontSize: 16)),
+                label: const Text(
+                  'Generate PDF',
+                  style: TextStyle(fontSize: 16),
+                ),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -215,5 +235,4 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
       },
     );
   }
-
 }
