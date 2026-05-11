@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/material.dart' show Color;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
@@ -15,6 +16,14 @@ typedef ProgressCallback = void Function(double progress, String message);
 class PdfService {
   static PdfColor _getPdfColor(Color color, double opacity) {
     return PdfColor(color.r, color.g, color.b, opacity);
+  }
+
+  @visibleForTesting
+  static Future<Uint8List> compressImageForTest(
+    String path,
+    CompressionLevel compLevel,
+  ) async {
+    return _compressImage(path, compLevel);
   }
 
   static Future<Uint8List> _compressImage(
