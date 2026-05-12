@@ -5,6 +5,7 @@ import 'package:flutter/material.dart' show Color;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:docsathi/features/photo_to_pdf/data/models/pdf_settings_model.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -175,7 +176,7 @@ class PdfService {
 
     final outputDir = await getApplicationDocumentsDirectory();
     final outputFile = File(
-      '${outputDir.path}/DocSathi_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      p.join(outputDir.path, 'DocSathi_${DateTime.now().millisecondsSinceEpoch}.pdf'),
     );
     await outputFile.writeAsBytes(await pdf.save());
 
