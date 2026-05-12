@@ -5,6 +5,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path/path.dart' as p;
 
 class ImageService {
   static final _uuid = const Uuid();
@@ -31,7 +32,7 @@ class ImageService {
     img.Image rotatedImage = img.copyRotate(originalImage, angle: angle);
 
     final tempDir = await getTemporaryDirectory();
-    final newPath = '${tempDir.path}/${_uuid.v4()}.jpg';
+    final newPath = p.join(tempDir.path, '${_uuid.v4()}.jpg');
     final newFile = File(newPath);
     await newFile.writeAsBytes(img.encodeJpg(rotatedImage));
 
@@ -62,7 +63,7 @@ class ImageService {
     }
 
     final tempDir = await getTemporaryDirectory();
-    final newPath = '${tempDir.path}/${_uuid.v4()}.jpg';
+    final newPath = p.join(tempDir.path, '${_uuid.v4()}.jpg');
     final newFile = File(newPath);
     await newFile.writeAsBytes(img.encodeJpg(filteredImage));
 
@@ -88,8 +89,7 @@ class ImageService {
       BackgroundIsolateBinaryMessenger.ensureInitialized(token);
     }
     final paths = args['paths'] as List<String>;
-    final thumbnails = <Uint8List>[];
-    for (final path in paths) {
+    final futures = paths.map((path) async {
       try {
         final result = await FlutterImageCompress.compressWithFile(
           path,
@@ -97,16 +97,11 @@ class ImageService {
           minHeight: 150,
           quality: 80,
         );
-        if (result != null) {
-          thumbnails.add(result);
-        } else {
-          // Fallback or empty if compress fails
-          thumbnails.add(Uint8List(0));
-        }
+        return result ?? Uint8List(0);
       } catch (e) {
-        thumbnails.add(Uint8List(0));
+        return Uint8List(0);
       }
-    }
-    return thumbnails;
+    });
+    return await Future.wait(futures);
   }
 }
