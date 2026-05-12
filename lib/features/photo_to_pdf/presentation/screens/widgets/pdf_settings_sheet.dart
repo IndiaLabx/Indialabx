@@ -130,9 +130,6 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = ref.watch(pdfSettingsProvider);
-    final notifier = ref.read(pdfSettingsProvider.notifier);
-
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       minChildSize: 0.5,
@@ -141,98 +138,147 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
       builder: (context, scrollController) {
         return Stack(
           children: [
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const Text(
-                    'PDF Settings',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: ListView(
-                      controller: scrollController,
-                      children: [
-                        TextField(
-                          controller: _fileNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'File Name',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.description),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        SwitchListTile(
-                          title: const Text('Show Page Numbers'),
-                          value: settings.showPageNumbers,
-                          onChanged: (val) =>
-                              notifier.updateSettings(showPageNumbers: val),
-                        ),
-                        const SizedBox(height: 80), // Padding for bottom button
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            _SettingsForm(
+              scrollController: scrollController,
+              fileNameController: _fileNameController,
             ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16,
-              child: FilledButton.icon(
-                onPressed: _isGenerating ? null : _generatePdf,
-                icon: const Icon(Icons.picture_as_pdf),
-                label: const Text(
-                  'Generate PDF',
-                  style: TextStyle(fontSize: 16),
-                ),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
+            _GenerateButton(
+              isGenerating: _isGenerating,
+              onGenerate: _generatePdf,
             ),
             if (_isGenerating)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black54,
-                  child: Center(
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const CircularProgressIndicator(),
-                            const SizedBox(height: 16),
-                            Text('${(_progress * 100).toInt()}%'),
-                            const SizedBox(height: 8),
-                            Text(_progressMessage, textAlign: TextAlign.center),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              _ProgressOverlay(
+                progress: _progress,
+                progressMessage: _progressMessage,
               ),
           ],
         );
       },
+    );
+  }
+}
+
+class _SettingsForm extends ConsumerWidget {
+  final ScrollController scrollController;
+  final TextEditingController fileNameController;
+
+  const _SettingsForm({
+    required this.scrollController,
+    required this.fileNameController,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(pdfSettingsProvider);
+    final notifier = ref.read(pdfSettingsProvider.notifier);
+
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade400,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Text(
+            'PDF Settings',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: ListView(
+              controller: scrollController,
+              children: [
+                TextField(
+                  controller: fileNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'File Name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.description),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  title: const Text('Show Page Numbers'),
+                  value: settings.showPageNumbers,
+                  onChanged: (val) =>
+                      notifier.updateSettings(showPageNumbers: val),
+                ),
+                const SizedBox(height: 80), // Padding for bottom button
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GenerateButton extends StatelessWidget {
+  final bool isGenerating;
+  final VoidCallback onGenerate;
+
+  const _GenerateButton({required this.isGenerating, required this.onGenerate});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 16,
+      right: 16,
+      bottom: 16,
+      child: FilledButton.icon(
+        onPressed: isGenerating ? null : onGenerate,
+        icon: const Icon(Icons.picture_as_pdf),
+        label: const Text('Generate PDF', style: TextStyle(fontSize: 16)),
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressOverlay extends StatelessWidget {
+  final double progress;
+  final String progressMessage;
+
+  const _ProgressOverlay({
+    required this.progress,
+    required this.progressMessage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black54,
+        child: Center(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text('${(progress * 100).toInt()}%'),
+                  const SizedBox(height: 8),
+                  Text(progressMessage, textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
