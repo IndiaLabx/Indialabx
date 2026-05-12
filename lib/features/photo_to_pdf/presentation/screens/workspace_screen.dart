@@ -63,36 +63,7 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
     );
   }
 
-  String _calculateEstimatedSize(WorkspaceState state) {
-    if (state.pages.isEmpty) {
-      return '0 B';
-    }
 
-    int totalOriginalBytes = 0;
-    for (var page in state.pages) {
-      totalOriginalBytes += page.originalSizeBytes;
-    }
-
-    double compressionFactor = 1.0;
-    switch (state.compressionLevel) {
-      case CompressionLevel.high:
-        compressionFactor = 0.8;
-        break;
-      case CompressionLevel.balanced:
-        compressionFactor = 0.4;
-        break;
-      case CompressionLevel.max:
-        compressionFactor = 0.15;
-        break;
-    }
-
-    final estimatedBytes = (totalOriginalBytes * compressionFactor).toInt();
-
-    if (estimatedBytes < 1024 * 1024) {
-      return '${(estimatedBytes / 1024).toStringAsFixed(0)} KB';
-    }
-    return '${(estimatedBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,13 +131,18 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                 color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text(
-                'Est: ${_calculateEstimatedSize(workspaceState)}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final sizeAsync = ref.watch(estimatedSizeProvider);
+                  return Text(
+                    'Est: ${sizeAsync.value ?? '...'}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(width: 8),

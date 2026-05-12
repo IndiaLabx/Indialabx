@@ -1,9 +1,42 @@
 import 'dart:io';
-import 'dart:typed_data';
 
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
+
+Future<String> calculateSizeOffThread(WorkspaceState state) async {
+  return compute((WorkspaceState s) {
+    if (s.pages.isEmpty) return '0 KB';
+    int totalBytes = 0;
+    for (final page in s.pages) {
+      totalBytes += page.originalSizeBytes;
+    }
+    double compressionFactor = 1.0;
+    switch (s.compressionLevel) {
+      case CompressionLevel.high:
+        compressionFactor = 0.8;
+        break;
+      case CompressionLevel.balanced:
+        compressionFactor = 0.4;
+        break;
+      case CompressionLevel.max:
+        compressionFactor = 0.15;
+        break;
+    }
+    final estBytes = (totalBytes * compressionFactor).toInt();
+    if (estBytes < 1024 * 1024) {
+      return '${(estBytes / 1024).toStringAsFixed(0)} KB';
+    }
+    return '${(estBytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }, state);
+}
+
+final estimatedSizeProvider = FutureProvider.autoDispose<String>((ref) {
+  final state = ref.watch(workspaceProvider);
+  return calculateSizeOffThread(state);
+});
 
 enum WorkspaceMode { grid, focus }
 enum ActiveToolTier { none, adjust, layout, filters, quality, watermark, security }
