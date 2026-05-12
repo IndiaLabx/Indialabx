@@ -47,9 +47,7 @@ class _FluidDeckState extends ConsumerState<FluidDeck> {
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutCubic,
-            height: state.activeTool == ActiveToolTier.none
-                ? 0
-                : 160, // Taller to accommodate Watermark sliders
+            height: state.activeTool == ActiveToolTier.none ? 0 : 160, // Taller to accommodate Watermark sliders
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: const BorderRadius.vertical(

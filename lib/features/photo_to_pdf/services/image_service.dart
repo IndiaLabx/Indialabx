@@ -89,8 +89,7 @@ class ImageService {
       BackgroundIsolateBinaryMessenger.ensureInitialized(token);
     }
     final paths = args['paths'] as List<String>;
-    final thumbnails = <Uint8List>[];
-    for (final path in paths) {
+    final futures = paths.map((path) async {
       try {
         final result = await FlutterImageCompress.compressWithFile(
           path,
@@ -98,16 +97,11 @@ class ImageService {
           minHeight: 150,
           quality: 80,
         );
-        if (result != null) {
-          thumbnails.add(result);
-        } else {
-          // Fallback or empty if compress fails
-          thumbnails.add(Uint8List(0));
-        }
+        return result ?? Uint8List(0);
       } catch (e) {
-        thumbnails.add(Uint8List(0));
+        return Uint8List(0);
       }
-    }
-    return thumbnails;
+    });
+    return await Future.wait(futures);
   }
 }
