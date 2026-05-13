@@ -183,6 +183,11 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             onPressed: () => notifier.pickImages(),
             tooltip: 'Add more photos',
           ),
+          IconButton(
+            icon: const Icon(Icons.document_scanner),
+            onPressed: () => notifier.scanDocuments(),
+            tooltip: 'Scan Document',
+          ),
         ],
       ),
       body: Stack(
@@ -407,6 +412,33 @@ class _FilteredImage extends ConsumerWidget {
           1.2,
           0,
           10,
+          0,
+          0,
+          0,
+          1,
+          0,
+        ]),
+        child: image,
+      );
+    } else if (page.filterType == FilterType.magic) {
+      // Magic contrast/brightness enhancement matrix (higher contrast/brightness)
+      image = ColorFiltered(
+        colorFilter: const ColorFilter.matrix([
+          1.5,
+          0,
+          0,
+          0,
+          20,
+          0,
+          1.5,
+          0,
+          0,
+          20,
+          0,
+          0,
+          1.5,
+          0,
+          20,
           0,
           0,
           0,

@@ -88,6 +88,12 @@ class ImageService {
         contrast: 1.2,
         brightness: 1.1,
       );
+    } else if (filter == 'magic' || filter == 'Magic') {
+      filteredImage = img.adjustColor(
+        originalImage,
+        contrast: 1.5,
+        brightness: 1.2,
+      );
     } else if (filter == 'Black & White') {
       filteredImage = img.luminanceThreshold(originalImage);
     } else {
