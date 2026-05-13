@@ -210,6 +210,10 @@ class _FluidDeckState extends ConsumerState<FluidDeck> {
           toolbarWidgetColor: Colors.white,
           initAspectRatio: CropAspectRatioPreset.original,
           lockAspectRatio: false,
+          hideBottomControls: false,
+        ),
+        IOSUiSettings(
+          title: 'Crop Image',
         ),
       ],
     );
@@ -312,6 +316,13 @@ class _FluidDeckState extends ConsumerState<FluidDeck> {
                 context,
                 'Enhanced',
                 FilterType.enhanced,
+                currentPage.filterType,
+                notifier,
+              ),
+              _filterChoice(
+                context,
+                'Magic',
+                FilterType.magic,
                 currentPage.filterType,
                 notifier,
               ),

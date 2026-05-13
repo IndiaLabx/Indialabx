@@ -15,6 +15,7 @@ class PdfSettingsRepository {
   static const String _watermarkOpacityKey = 'pdf_setting_watermark_opacity';
   static const String _watermarkSizeKey = 'pdf_setting_watermark_size';
   static const String _watermarkAngleKey = 'pdf_setting_watermark_angle';
+  static const String _backgroundColorValueKey = 'pdf_setting_background_color';
 
   PdfSettingsModel getSettings() {
     final qualityIndex =
@@ -37,6 +38,9 @@ class PdfSettingsRepository {
           sharedPreferences.getDouble(_watermarkOpacityKey) ?? 0.3,
       watermarkSize: sharedPreferences.getDouble(_watermarkSizeKey) ?? 40.0,
       watermarkAngle: sharedPreferences.getDouble(_watermarkAngleKey) ?? 45.0,
+      backgroundColor: Color(
+        sharedPreferences.getInt(_backgroundColorValueKey) ?? Colors.white.toARGB32(),
+      ),
     );
   }
 
@@ -67,6 +71,10 @@ class PdfSettingsRepository {
     await sharedPreferences.setDouble(
       _watermarkAngleKey,
       settings.watermarkAngle,
+    );
+    await sharedPreferences.setInt(
+      _backgroundColorValueKey,
+      settings.backgroundColor.toARGB32(),
     );
   }
 }

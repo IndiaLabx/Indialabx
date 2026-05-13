@@ -213,6 +213,22 @@ class _SettingsForm extends ConsumerWidget {
                   onChanged: (val) =>
                       notifier.updateSettings(showPageNumbers: val),
                 ),
+                ListTile(
+                  title: const Text('Background Color'),
+                  trailing: DropdownButton<String>(
+                    value: settings.backgroundColor == Colors.black ? 'Black' : 'White',
+                    items: ['White', 'Black']
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        notifier.updateSettings(
+                          backgroundColor: val == 'Black' ? Colors.black : Colors.white,
+                        );
+                      }
+                    },
+                  ),
+                ),
                 const SizedBox(height: 80), // Padding for bottom button
               ],
             ),
