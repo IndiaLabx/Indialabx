@@ -6,6 +6,7 @@ import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspac
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/pdf_settings_sheet.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/fluid_deck.dart';
 import 'package:go_router/go_router.dart';
+import 'package:gal/gal.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
   const WorkspaceScreen({super.key});
@@ -149,6 +150,34 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
           ],
         ),
         actions: [
+          if (workspaceState.mode == WorkspaceMode.focus && workspaceState.pages.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.save_alt),
+              tooltip: 'Save to Gallery',
+              onPressed: () async {
+                try {
+                  bool hasAccess = await Gal.hasAccess();
+                  if (!hasAccess) {
+                    hasAccess = await Gal.requestAccess();
+                  }
+                  if (hasAccess) {
+                    final page = workspaceState.pages[workspaceState.focusedPageIndex];
+                    await Gal.putImage(page.effectivePath);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Image saved to gallery!')),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to save image')),
+                    );
+                  }
+                }
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.add_photo_alternate),
             onPressed: () => notifier.pickImages(),
