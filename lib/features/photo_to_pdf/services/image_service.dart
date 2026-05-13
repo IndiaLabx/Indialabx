@@ -25,27 +25,59 @@ class ImageService {
 
   static Future<String> rotateImage(String path, int angle) async {
     final bytes = await File(path).readAsBytes();
-    img.Image? originalImage = img.decodeImage(bytes);
 
-    if (originalImage == null) return path;
+    final processedBytes = await compute(_rotateImageIsolate, {
+      'bytes': bytes,
+      'angle': angle,
+    });
 
-    img.Image rotatedImage = img.copyRotate(originalImage, angle: angle);
+    if (processedBytes == null) return path;
 
     final tempDir = await getTemporaryDirectory();
     final newPath = p.join(tempDir.path, '${_uuid.v4()}.jpg');
     final newFile = File(newPath);
-    await newFile.writeAsBytes(img.encodeJpg(rotatedImage));
+    await newFile.writeAsBytes(processedBytes);
 
     return newPath;
+  }
+
+  static Uint8List? _rotateImageIsolate(Map<String, dynamic> args) {
+    final bytes = args['bytes'] as Uint8List;
+    final angle = args['angle'] as int;
+
+    img.Image? originalImage = img.decodeImage(bytes);
+    if (originalImage == null) return null;
+
+    img.Image rotatedImage = img.copyRotate(originalImage, angle: angle);
+    return Uint8List.fromList(img.encodeJpg(rotatedImage));
   }
 
   static Future<String> applyColorFilter(String path, String filter) async {
     if (filter == 'original' || filter == 'Original') return path;
 
     final bytes = await File(path).readAsBytes();
-    img.Image? originalImage = img.decodeImage(bytes);
 
-    if (originalImage == null) return path;
+    final processedBytes = await compute(_applyFilterIsolate, {
+      'bytes': bytes,
+      'filter': filter,
+    });
+
+    if (processedBytes == null) return path;
+
+    final tempDir = await getTemporaryDirectory();
+    final newPath = p.join(tempDir.path, '${_uuid.v4()}.jpg');
+    final newFile = File(newPath);
+    await newFile.writeAsBytes(processedBytes);
+
+    return newPath;
+  }
+
+  static Uint8List? _applyFilterIsolate(Map<String, dynamic> args) {
+    final bytes = args['bytes'] as Uint8List;
+    final filter = args['filter'] as String;
+
+    img.Image? originalImage = img.decodeImage(bytes);
+    if (originalImage == null) return null;
 
     img.Image filteredImage;
     if (filter == 'grayscale' || filter == 'Grayscale') {
@@ -56,18 +88,19 @@ class ImageService {
         contrast: 1.2,
         brightness: 1.1,
       );
+    } else if (filter == 'magic' || filter == 'Magic') {
+      filteredImage = img.adjustColor(
+        originalImage,
+        contrast: 1.5,
+        brightness: 1.2,
+      );
     } else if (filter == 'Black & White') {
       filteredImage = img.luminanceThreshold(originalImage);
     } else {
       filteredImage = originalImage;
     }
 
-    final tempDir = await getTemporaryDirectory();
-    final newPath = p.join(tempDir.path, '${_uuid.v4()}.jpg');
-    final newFile = File(newPath);
-    await newFile.writeAsBytes(img.encodeJpg(filteredImage));
-
-    return newPath;
+    return Uint8List.fromList(img.encodeJpg(filteredImage));
   }
 
   // Isolate processing for generating thumbnails in bulk

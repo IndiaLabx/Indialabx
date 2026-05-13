@@ -121,14 +121,33 @@ class PdfService {
         }
       }
 
-      pdf.addPage(
-        pw.Page(
+      pw.PageTheme? theme;
+      if (settings.pageSize != 'Fit') {
+        theme = pw.PageTheme(
           pageFormat: pageFormat.copyWith(
             marginTop: margin,
             marginBottom: margin,
             marginLeft: margin,
             marginRight: margin,
           ),
+          buildBackground: (context) => pw.FullPage(
+            ignoreMargins: true,
+            child: pw.Container(
+              color: _getPdfColor(settings.backgroundColor, 1.0),
+            ),
+          ),
+        );
+      }
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: theme == null ? pageFormat.copyWith(
+            marginTop: margin,
+            marginBottom: margin,
+            marginLeft: margin,
+            marginRight: margin,
+          ) : null,
+          pageTheme: theme,
           build: (pw.Context context) {
             return pw.Stack(
               alignment: pw.Alignment.center,

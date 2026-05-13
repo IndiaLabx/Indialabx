@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
+import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 
 Future<String> calculateSizeOffThread(WorkspaceState state) async {
   return compute((WorkspaceState s) {
@@ -40,7 +41,7 @@ final estimatedSizeProvider = FutureProvider.autoDispose<String>((ref) {
 
 enum WorkspaceMode { grid, focus }
 enum ActiveToolTier { none, adjust, layout, filters, quality, watermark, security }
-enum FilterType { original, grayscale, enhanced }
+enum FilterType { original, grayscale, enhanced, magic }
 enum CompressionLevel { high, balanced, max }
 
 class DocumentPage {
@@ -141,6 +142,19 @@ class WorkspaceController extends Notifier<WorkspaceState> {
       if (images.isNotEmpty) {
           await addImages(images.map((e) => e.path).toList());
           return true;
+      }
+      return false;
+  }
+
+  Future<bool> scanDocuments() async {
+      try {
+          final pictures = await CunningDocumentScanner.getPictures();
+          if (pictures != null && pictures.isNotEmpty) {
+              await addImages(pictures);
+              return true;
+          }
+      } catch (e) {
+          debugPrint('Error scanning documents: $e');
       }
       return false;
   }

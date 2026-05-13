@@ -55,6 +55,7 @@ dependencies:
   flutter_colorpicker: ^1.1.0
   lottie: ^3.3.3
   gal: ^2.3.2
+  cunning_document_scanner: ^1.4.0
 
 dev_dependencies:
   flutter_test:
