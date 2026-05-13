@@ -3,11 +3,19 @@ import 'package:docsathi/features/home/presentation/home_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/document_dashboard_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/workspace_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/preview_screen.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/screens/external_pdf_viewer_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+    GoRoute(
+      path: '/external-pdf-preview',
+      builder: (context, state) {
+        final pdfPath = state.extra as String;
+        return ExternalPdfViewerScreen(pdfPath: pdfPath);
+      },
+    ),
     GoRoute(
       path: '/photo-to-pdf',
       builder: (context, state) => const DocumentDashboardScreen(),

@@ -55,6 +55,7 @@ dependencies:
   flutter_colorpicker: ^1.1.0
   lottie: ^3.3.3
   gal: ^2.3.2
+  receive_sharing_intent: ^1.8.1
 
 dev_dependencies:
   flutter_test:
