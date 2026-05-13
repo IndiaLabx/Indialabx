@@ -184,9 +184,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             tooltip: 'Add more photos',
           ),
           IconButton(
-            icon: const Icon(Icons.document_scanner),
-            onPressed: () => notifier.scanDocuments(),
-            tooltip: 'Scan Document',
+            icon: const Icon(Icons.camera_alt),
+            onPressed: () => notifier.takePicture(),
+            tooltip: 'Take Photo',
           ),
         ],
       ),
@@ -204,10 +204,21 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
-                  FilledButton.icon(
-                    onPressed: () => notifier.pickImages(),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Select Photos'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: () => notifier.pickImages(),
+                        icon: const Icon(Icons.photo_library),
+                        label: const Text('Select Photos'),
+                      ),
+                      const SizedBox(width: 16),
+                      FilledButton.icon(
+                        onPressed: () => notifier.takePicture(),
+                        icon: const Icon(Icons.camera_alt),
+                        label: const Text('Take Photo'),
+                      ),
+                    ],
                   ),
                 ],
               ),
