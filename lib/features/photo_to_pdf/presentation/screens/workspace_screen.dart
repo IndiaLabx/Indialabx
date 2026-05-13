@@ -5,7 +5,6 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/pdf_settings_sheet.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/fluid_deck.dart';
-import 'package:go_router/go_router.dart';
 import 'package:gal/gal.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
