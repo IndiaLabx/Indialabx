@@ -258,13 +258,27 @@ class _SettingsForm extends ConsumerWidget {
                       notifier.updateSettings(showPageNumbers: val),
                 ),
                 ListTile(
+                  title: const Text('Image Padding/Fit'),
+                  trailing: DropdownButton<String>(
+                    value: settings.imageFit,
+                    items: ['Contain', 'Cover', 'Content Aware Fill']
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        notifier.updateSettings(imageFit: val);
+                      }
+                    },
+                  ),
+                ),
+                ListTile(
                   title: const Text('Background Color'),
                   trailing: DropdownButton<String>(
                     value: settings.backgroundColor == Colors.black ? 'Black' : 'White',
                     items: ['White', 'Black']
                         .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                         .toList(),
-                    onChanged: (val) {
+                    onChanged: settings.imageFit != 'Contain' ? null : (val) {
                       if (val != null) {
                         notifier.updateSettings(
                           backgroundColor: val == 'Black' ? Colors.black : Colors.white,

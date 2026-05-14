@@ -16,6 +16,7 @@ class PdfSettingsRepository {
   static const String _watermarkSizeKey = 'pdf_setting_watermark_size';
   static const String _watermarkAngleKey = 'pdf_setting_watermark_angle';
   static const String _backgroundColorValueKey = 'pdf_setting_background_color';
+  static const String _imageFitKey = 'pdf_setting_image_fit';
 
   PdfSettingsModel getSettings() {
     final qualityIndex =
@@ -41,6 +42,7 @@ class PdfSettingsRepository {
       backgroundColor: Color(
         sharedPreferences.getInt(_backgroundColorValueKey) ?? Colors.white.toARGB32(),
       ),
+      imageFit: sharedPreferences.getString(_imageFitKey) ?? 'Contain',
     );
   }
 
@@ -75,6 +77,10 @@ class PdfSettingsRepository {
     await sharedPreferences.setInt(
       _backgroundColorValueKey,
       settings.backgroundColor.toARGB32(),
+    );
+    await sharedPreferences.setString(
+      _imageFitKey,
+      settings.imageFit,
     );
   }
 }

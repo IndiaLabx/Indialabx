@@ -15,6 +15,7 @@ class PdfSettingsModel {
   final double watermarkAngle;
   final bool showPageNumbers;
   final Color backgroundColor;
+  final String imageFit;
 
   PdfSettingsModel({
     required this.pageSize,
@@ -29,6 +30,7 @@ class PdfSettingsModel {
     this.watermarkAngle = 45.0,
     this.showPageNumbers = false,
     this.backgroundColor = Colors.white,
+    this.imageFit = 'Contain',
   });
 
   PdfSettingsModel copyWith({
@@ -44,6 +46,7 @@ class PdfSettingsModel {
     double? watermarkAngle,
     bool? showPageNumbers,
     Color? backgroundColor,
+    String? imageFit,
   }) {
     return PdfSettingsModel(
       pageSize: pageSize ?? this.pageSize,
@@ -58,6 +61,7 @@ class PdfSettingsModel {
       watermarkAngle: watermarkAngle ?? this.watermarkAngle,
       showPageNumbers: showPageNumbers ?? this.showPageNumbers,
       backgroundColor: backgroundColor ?? this.backgroundColor,
+      imageFit: imageFit ?? this.imageFit,
     );
   }
 }
