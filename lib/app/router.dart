@@ -4,6 +4,7 @@ import 'package:docsathi/features/photo_to_pdf/presentation/screens/document_das
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/workspace_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/preview_screen.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/external_pdf_viewer_screen.dart';
+import 'package:docsathi/features/image_resize/presentation/screens/image_resize_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -27,6 +28,10 @@ final appRouter = GoRouter(
         final pdfPath = state.extra as String;
         return ExternalPdfViewerScreen(pdfPath: pdfPath);
       },
+    ),
+    GoRoute(
+      path: '/resize',
+      builder: (context, state) => const ImageResizeScreen(),
     ),
     GoRoute(
       path: '/photo-to-pdf',
