@@ -26,23 +26,77 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
   final TextEditingController _watermarkTextController =
       TextEditingController();
   bool _isGenerating = false;
-  double _progress = 0.0;
-  String _progressMessage = '';
+
+  final ValueNotifier<double> _progressNotifier = ValueNotifier<double>(0.0);
+  final ValueNotifier<String> _progressMessageNotifier = ValueNotifier<String>('');
 
   @override
   void dispose() {
     _fileNameController.dispose();
     _passwordController.dispose();
     _watermarkTextController.dispose();
+    _progressNotifier.dispose();
+    _progressMessageNotifier.dispose();
     super.dispose();
+  }
+
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return PopScope(
+          canPop: false,
+          child: Dialog(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            child: Center(
+              child: Card(
+                color: Theme.of(context).cardColor,
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      ValueListenableBuilder<double>(
+                        valueListenable: _progressNotifier,
+                        builder: (context, value, child) {
+                          return Text('${(value * 100).toInt()}%');
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      ValueListenableBuilder<String>(
+                        valueListenable: _progressMessageNotifier,
+                        builder: (context, value, child) {
+                          return Text(value, textAlign: TextAlign.center);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _hideLoadingDialog() {
+    Navigator.of(context, rootNavigator: true).pop();
   }
 
   Future<void> _generatePdf() async {
     setState(() {
       _isGenerating = true;
-      _progress = 0.1;
-      _progressMessage = 'Preparing document...';
     });
+
+    _progressNotifier.value = 0.1;
+    _progressMessageNotifier.value = 'Preparing document...';
+
+    _showLoadingDialog();
 
     try {
       final workspaceState = ref.read(workspaceProvider);
@@ -57,29 +111,21 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
             : null,
       );
 
-      // Use effective paths from WorkspaceState
       final pages = workspaceState.pages;
 
-      setState(() {
-        _progress = 0.3;
-        _progressMessage = 'Processing images...';
-      });
+      _progressNotifier.value = 0.3;
+      _progressMessageNotifier.value = 'Processing images...';
 
       final pdfPath = await PdfService.generatePdfFromImages(
         pages: pages,
         compressionLevel: workspaceState.compressionLevel,
         settings: ref.read(pdfSettingsProvider),
         onProgress: (progress, message) {
-          if (mounted) {
-            setState(() {
-              _progress = 0.3 + (progress * 0.6);
-              _progressMessage = message;
-            });
-          }
+          _progressNotifier.value = 0.3 + (progress * 0.6);
+          _progressMessageNotifier.value = message;
         },
       );
 
-      // Add document to repository
       final file = File(pdfPath);
       final size = await file.length();
       final docModel = DocumentModel(
@@ -95,16 +141,18 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
 
       await ref.read(documentListProvider.notifier).addDocument(docModel);
 
+      _progressNotifier.value = 1.0;
+      _progressMessageNotifier.value = 'Complete!';
+
+      _hideLoadingDialog();
+
       setState(() {
-        _progress = 1.0;
-        _progressMessage = 'Complete!';
+        _isGenerating = false;
       });
 
       if (mounted) {
-        // Pop the settings sheet first
         Navigator.pop(context);
 
-        // Show the post-generation rich action dashboard
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
@@ -117,6 +165,7 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
         );
       }
     } catch (e) {
+      _hideLoadingDialog();
       if (mounted) {
         setState(() {
           _isGenerating = false;
@@ -146,11 +195,6 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
               isGenerating: _isGenerating,
               onGenerate: _generatePdf,
             ),
-            if (_isGenerating)
-              _ProgressOverlay(
-                progress: _progress,
-                progressMessage: _progressMessage,
-              ),
           ],
         );
       },
@@ -229,7 +273,7 @@ class _SettingsForm extends ConsumerWidget {
                     },
                   ),
                 ),
-                const SizedBox(height: 80), // Padding for bottom button
+                const SizedBox(height: 80),
               ],
             ),
           ),
@@ -257,42 +301,6 @@ class _GenerateButton extends StatelessWidget {
         label: const Text('Generate PDF', style: TextStyle(fontSize: 16)),
         style: FilledButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProgressOverlay extends StatelessWidget {
-  final double progress;
-  final String progressMessage;
-
-  const _ProgressOverlay({
-    required this.progress,
-    required this.progressMessage,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: Container(
-        color: Colors.black54,
-        child: Center(
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text('${(progress * 100).toInt()}%'),
-                  const SizedBox(height: 8),
-                  Text(progressMessage, textAlign: TextAlign.center),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );

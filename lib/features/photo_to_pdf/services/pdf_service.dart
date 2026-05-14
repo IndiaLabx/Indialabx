@@ -1,15 +1,17 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
-import 'package:flutter/material.dart' show Color;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:uuid/uuid.dart';
+import 'package:image/image.dart' as img;
 import 'package:docsathi/features/photo_to_pdf/data/models/pdf_settings_model.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
+import 'package:docsathi/core/services/file_service.dart';
 
 typedef ProgressCallback = void Function(double progress, String message);
 
@@ -18,10 +20,50 @@ class PdfService {
     return PdfColor(color.r, color.g, color.b, opacity);
   }
 
-  static Future<Uint8List> _compressImage(
-    String path,
-    CompressionLevel compLevel,
-  ) async {
+  static Future<Uint8List> _processSingleImage(Map<String, dynamic> args) async {
+    final token = args['token'] as RootIsolateToken?;
+    if (token != null) {
+      BackgroundIsolateBinaryMessenger.ensureInitialized(token);
+    }
+
+    final path = args['path'] as String;
+    final filter = args['filter'] as String;
+    final compLevel = args['compressionLevel'] as CompressionLevel;
+
+    String pathToProcess = path;
+    if (filter != 'original' && filter != 'Original') {
+      final bytes = await File(path).readAsBytes();
+      img.Image? originalImage = img.decodeImage(bytes);
+      if (originalImage != null) {
+        img.Image filteredImage;
+        if (filter == 'grayscale' || filter == 'Grayscale') {
+          filteredImage = img.grayscale(originalImage);
+        } else if (filter == 'enhanced' || filter == 'Enhanced') {
+          filteredImage = img.adjustColor(
+            originalImage,
+            contrast: 1.2,
+            brightness: 1.1,
+          );
+        } else if (filter == 'magic' || filter == 'Magic') {
+          filteredImage = img.adjustColor(
+            originalImage,
+            contrast: 1.5,
+            brightness: 1.2,
+          );
+        } else if (filter == 'Black & White') {
+          filteredImage = img.luminanceThreshold(originalImage);
+        } else {
+          filteredImage = originalImage;
+        }
+
+        final tempDir = await getTemporaryDirectory();
+        final newPath = p.join(tempDir.path, '${const Uuid().v4()}.jpg');
+        final newFile = File(newPath);
+        await newFile.writeAsBytes(img.encodeJpg(filteredImage));
+        pathToProcess = newPath;
+      }
+    }
+
     int qualityVal;
     int targetWidth;
     switch (compLevel) {
@@ -39,9 +81,8 @@ class PdfService {
         break;
     }
 
-    // Read image using flutter_image_compress for efficiency
     final compressedBytes = await FlutterImageCompress.compressWithFile(
-      path,
+      pathToProcess,
       quality: qualityVal,
       minWidth: targetWidth,
     );
@@ -49,9 +90,7 @@ class PdfService {
     if (compressedBytes != null) {
       return compressedBytes;
     }
-
-    // Fallback if compress fails
-    return await File(path).readAsBytes();
+    return await File(pathToProcess).readAsBytes();
   }
 
   static Future<String> generatePdfFromImages({
@@ -60,15 +99,13 @@ class PdfService {
     required CompressionLevel compressionLevel,
     ProgressCallback? onProgress,
   }) async {
-    // Current version of `pdf` package doesn't support password protection easily via widgets Document
-    // So we'll skip password protection for this step.
     pw.Document pdf = pw.Document(compress: true);
 
     PdfPageFormat format;
     if (settings.pageSize == 'Letter') {
       format = PdfPageFormat.letter;
     } else if (settings.pageSize == 'Fit') {
-      format = PdfPageFormat.undefined; // We'll handle this per page
+      format = PdfPageFormat.undefined;
     } else {
       format = PdfPageFormat.a4;
     }
@@ -87,27 +124,40 @@ class PdfService {
     }
 
     final totalImages = pages.length;
+    final processedBytesList = List<Uint8List?>.filled(totalImages, null);
 
-    for (int i = 0; i < totalImages; i++) {
-      final page = pages[i];
+    final chunkSize = 3;
+    final token = RootIsolateToken.instance;
+
+    for (int i = 0; i < totalImages; i += chunkSize) {
+      final end = min(i + chunkSize, totalImages);
+      final chunk = pages.sublist(i, end);
 
       onProgress?.call(
         (i / totalImages) * 0.8,
-        'Processing image ${i + 1} of $totalImages...',
+        'Processing images ${i + 1} to $end of $totalImages...',
       );
 
-      // 1. Apply Filter (in background isolate via ImageService if needed, but for simplicity here we do it before compress)
-      String pathToProcess = page.effectivePath;
-      if (page.filterType != FilterType.original) {
-        // Apply filter to high-res image and get temp path
-        pathToProcess = await ImageService.applyColorFilter(
-          pathToProcess,
-          page.filterType.name,
+      final futures = <Future<Uint8List>>[];
+      for (int j = 0; j < chunk.length; j++) {
+        futures.add(
+          compute(_processSingleImage, {
+            'path': chunk[j].effectivePath,
+            'filter': chunk[j].filterType.name,
+            'compressionLevel': compressionLevel,
+            'token': token,
+          })
         );
       }
 
-      // 2. Compress Image based on Engine Level
-      final imageBytes = await _compressImage(pathToProcess, compressionLevel);
+      final results = await Future.wait(futures);
+      for (int j = 0; j < results.length; j++) {
+        processedBytesList[i + j] = results[j];
+      }
+    }
+
+    for (int i = 0; i < totalImages; i++) {
+      final imageBytes = processedBytesList[i]!;
       final image = pw.MemoryImage(imageBytes);
 
       PdfPageFormat pageFormat = format;
@@ -152,10 +202,8 @@ class PdfService {
             return pw.Stack(
               alignment: pw.Alignment.center,
               children: [
-                // Main Image
                 pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain)),
 
-                // Watermark
                 if (settings.watermarkText != null &&
                     settings.watermarkText!.isNotEmpty)
                   pw.Center(
@@ -175,7 +223,6 @@ class PdfService {
                     ),
                   ),
 
-                // Page Number
                 if (settings.showPageNumbers)
                   pw.Positioned(
                     bottom: 10,
@@ -193,7 +240,7 @@ class PdfService {
 
     onProgress?.call(0.9, 'Saving PDF file...');
 
-    final outputDir = await getApplicationDocumentsDirectory();
+    final outputDir = await FileService.getPublicDirectory();
     final outputFile = File(
       p.join(outputDir.path, 'DocSathi_${DateTime.now().millisecondsSinceEpoch}.pdf'),
     );
