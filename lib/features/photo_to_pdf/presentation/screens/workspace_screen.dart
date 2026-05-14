@@ -5,6 +5,7 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/pdf_settings_sheet.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/fluid_deck.dart';
+import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
 import 'package:gal/gal.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
@@ -155,7 +156,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   }
                   if (hasAccess) {
                     final page = workspaceState.pages[workspaceState.focusedPageIndex];
-                    await Gal.putImage(page.effectivePath);
+                    String pathToSave = page.effectivePath;
+                    if (page.filterType != FilterType.original) {
+                      pathToSave = await ImageService.applyColorFilter(
+                        pathToSave,
+                        page.filterType.name,
+                      );
+                    }
+                    await Gal.putImage(pathToSave);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Image saved to gallery!')),
