@@ -5,7 +5,6 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/pdf_settings_sheet.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/fluid_deck.dart';
-import 'package:go_router/go_router.dart';
 import 'package:gal/gal.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
@@ -24,14 +23,8 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final workspaceState = ref.read(workspaceProvider);
-      if (workspaceState.pages.isEmpty) {
-        final didPick = await ref.read(workspaceProvider.notifier).pickImages();
-        if (!didPick && mounted) {
-          context.go('/photo-to-pdf');
-        }
-      }
       _nameController.text = workspaceState.documentName;
     });
 
@@ -184,9 +177,9 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
             tooltip: 'Add more photos',
           ),
           IconButton(
-            icon: const Icon(Icons.document_scanner),
-            onPressed: () => notifier.scanDocuments(),
-            tooltip: 'Scan Document',
+            icon: const Icon(Icons.camera_alt),
+            onPressed: () => notifier.takePicture(),
+            tooltip: 'Take Photo',
           ),
         ],
       ),
@@ -204,10 +197,21 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
-                  FilledButton.icon(
-                    onPressed: () => notifier.pickImages(),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Select Photos'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: () => notifier.pickImages(),
+                        icon: const Icon(Icons.add),
+                        label: const Text('Select Photos'),
+                      ),
+                      const SizedBox(width: 16),
+                      FilledButton.icon(
+                        onPressed: () => notifier.takePicture(),
+                        icon: const Icon(Icons.camera_alt),
+                        label: const Text('Take Photo'),
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
-import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 
 Future<String> calculateSizeOffThread(WorkspaceState state) async {
   return compute((WorkspaceState s) {
@@ -146,17 +145,14 @@ class WorkspaceController extends Notifier<WorkspaceState> {
       return false;
   }
 
-  Future<bool> scanDocuments() async {
-      try {
-          final pictures = await CunningDocumentScanner.getPictures();
-          if (pictures != null && pictures.isNotEmpty) {
-              await addImages(pictures);
-              return true;
-          }
-      } catch (e) {
-          debugPrint('Error scanning documents: $e');
-      }
-      return false;
+  Future<bool> takePicture() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.camera);
+    if (image != null) {
+      await addImages([image.path]);
+      return true;
+    }
+    return false;
   }
 
   Future<void> addImages(List<String> paths) async {
