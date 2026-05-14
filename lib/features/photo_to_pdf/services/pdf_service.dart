@@ -1,7 +1,5 @@
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
-import 'package:flutter/material.dart' show Color;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -13,7 +11,6 @@ import 'package:image/image.dart' as img;
 import 'package:docsathi/features/photo_to_pdf/data/models/pdf_settings_model.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
 import 'package:docsathi/core/services/file_service.dart';
 
 typedef ProgressCallback = void Function(double progress, String message);
