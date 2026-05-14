@@ -23,29 +23,42 @@ class DocumentDashboardScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Photo to PDF')),
       body: documents.isEmpty
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.description_outlined,
-                    size: 64,
-                    color: Theme.of(context).disabledColor,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No documents yet',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).disabledColor,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.8, end: 1.0),
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeOutBack,
+                builder: (context, scale, child) {
+                  return Transform.scale(
+                    scale: scale,
+                    child: Opacity(
+                      opacity: ((scale - 0.8) / 0.2).clamp(0.0, 1.0), // Maps 0.8-1.0 to 0.0-1.0
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.description_outlined,
+                            size: 64,
+                            color: Theme.of(context).disabledColor,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No documents yet',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).disabledColor,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap + to create a new PDF',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).disabledColor,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tap + to create a new PDF',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).disabledColor,
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             )
           : ListView.builder(

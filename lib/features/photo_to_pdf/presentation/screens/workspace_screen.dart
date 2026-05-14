@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:io';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/pdf_settings_sheet.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/fluid_deck.dart';
+import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
 import 'package:gal/gal.dart';
 
 class WorkspaceScreen extends ConsumerStatefulWidget {
@@ -155,7 +157,14 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   }
                   if (hasAccess) {
                     final page = workspaceState.pages[workspaceState.focusedPageIndex];
-                    await Gal.putImage(page.effectivePath);
+                    String pathToSave = page.effectivePath;
+                    if (page.filterType != FilterType.original) {
+                      pathToSave = await ImageService.applyColorFilter(
+                        pathToSave,
+                        page.filterType.name,
+                      );
+                    }
+                    await Gal.putImage(pathToSave);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Image saved to gallery!')),
@@ -187,33 +196,50 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
         children: [
           if (workspaceState.pages.isEmpty)
             Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.photo_library, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No photos selected',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      FilledButton.icon(
-                        onPressed: () => notifier.pickImages(),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Select Photos'),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.8, end: 1.0),
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeOutBack,
+                builder: (context, scale, child) {
+                  return Transform.scale(
+                    scale: scale,
+                    child: Opacity(
+                      opacity: ((scale - 0.8) / 0.2).clamp(0.0, 1.0), // Maps 0.8-1.0 to 0.0-1.0
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.photo_library,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No photos selected',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              FilledButton.icon(
+                                onPressed: () => notifier.pickImages(),
+                                icon: const Icon(Icons.add),
+                                label: const Text('Select Photos'),
+                              ),
+                              const SizedBox(width: 16),
+                              FilledButton.icon(
+                                onPressed: () => notifier.takePicture(),
+                                icon: const Icon(Icons.camera_alt),
+                                label: const Text('Take Photo'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 16),
-                      FilledButton.icon(
-                        onPressed: () => notifier.takePicture(),
-                        icon: const Icon(Icons.camera_alt),
-                        label: const Text('Take Photo'),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  );
+                },
               ),
             )
           else if (workspaceState.mode == WorkspaceMode.grid)
@@ -231,7 +257,10 @@ class _WorkspaceScreenState extends ConsumerState<WorkspaceScreen> {
                   mainAxisSpacing: 8,
                 ),
                 itemCount: workspaceState.pages.length,
-                onReorder: notifier.reorderImages,
+                onReorder: (oldIndex, newIndex) {
+                  HapticFeedback.lightImpact();
+                  notifier.reorderImages(oldIndex, newIndex);
+                },
                 itemBuilder: (context, index) {
                   final page = workspaceState.pages[index];
                   return _ImageGridItem(

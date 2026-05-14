@@ -160,7 +160,7 @@ class _PdfSettingsSheetState extends ConsumerState<PdfSettingsSheet> {
           builder: (context) => PostGenerationDashboard(
             pdfPath: pdfPath,
             fileName: _fileNameController.text,
-            imagePaths: pages.map((p) => p.effectivePath).toList(),
+            pages: pages,
           ),
         );
       }

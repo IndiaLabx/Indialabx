@@ -56,6 +56,7 @@ dependencies:
   lottie: ^3.3.3
   gal: ^2.3.2
   receive_sharing_intent: ^1.8.1
+  flutter_document_scanner: ^1.1.2
 
 dev_dependencies:
   flutter_test:
