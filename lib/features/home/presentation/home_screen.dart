@@ -17,7 +17,7 @@ class HomeScreen extends StatelessWidget {
         'title': 'Resize Image',
         'icon': Icons.photo_size_select_large,
         'route': '/resize',
-        'active': false,
+        'active': true,
       },
       {
         'title': 'PDF Editor',

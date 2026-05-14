@@ -57,6 +57,7 @@ dependencies:
   gal: ^2.3.2
   receive_sharing_intent: ^1.8.1
   flutter_document_scanner: ^1.1.2
+  archive: ^4.0.9
 
 dev_dependencies:
   flutter_test:
