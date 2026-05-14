@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/pdf_settings_controller.dart';
@@ -356,6 +357,7 @@ class _FluidDeckState extends ConsumerState<FluidDeck> {
       selected: isSelected,
       onSelected: (selected) {
         if (selected) {
+          HapticFeedback.selectionClick();
           notifier.applyFilterToCurrentPage(type);
         }
       },
@@ -387,6 +389,7 @@ class _FluidDeckState extends ConsumerState<FluidDeck> {
             ],
             selected: {state.compressionLevel},
             onSelectionChanged: (Set<CompressionLevel> newSelection) {
+              HapticFeedback.selectionClick();
               notifier.setCompressionLevel(newSelection.first);
             },
           ),
