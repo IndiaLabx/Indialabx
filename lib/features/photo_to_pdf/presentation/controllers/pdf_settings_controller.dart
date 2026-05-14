@@ -31,6 +31,7 @@ class PdfSettingsNotifier extends Notifier<PdfSettingsModel> {
     double? watermarkAngle,
     bool? showPageNumbers,
     Color? backgroundColor,
+    String? imageFit,
   }) async {
     final newSettings = state.copyWith(
       pageSize: pageSize,
@@ -45,6 +46,7 @@ class PdfSettingsNotifier extends Notifier<PdfSettingsModel> {
       watermarkAngle: watermarkAngle,
       showPageNumbers: showPageNumbers,
       backgroundColor: backgroundColor,
+      imageFit: imageFit,
     );
     state = newSettings;
     await ref.read(pdfSettingsRepositoryProvider).saveSettings(newSettings);

@@ -152,8 +152,27 @@ class PdfService {
             return pw.Stack(
               alignment: pw.Alignment.center,
               children: [
+                // Background Fill if Smart/Content Aware Fill is selected
+                if (settings.imageFit == 'Content Aware Fill' && settings.pageSize != 'Fit')
+                  pw.FullPage(
+                    ignoreMargins: true,
+                    child: pw.Image(image, fit: pw.BoxFit.cover)
+                  ),
+                if (settings.imageFit == 'Content Aware Fill' && settings.pageSize != 'Fit')
+                  pw.FullPage(
+                    ignoreMargins: true,
+                    child: pw.Container(
+                      color: const PdfColor(1, 1, 1, 0.4), // 40% white overlay to simulate blur/fade
+                    )
+                  ),
+
                 // Main Image
-                pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain)),
+                pw.Center(
+                  child: pw.Image(
+                    image,
+                    fit: settings.imageFit == 'Cover' ? pw.BoxFit.cover : pw.BoxFit.contain
+                  )
+                ),
 
                 // Watermark
                 if (settings.watermarkText != null &&
