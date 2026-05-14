@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
 import 'package:docsathi/features/photo_to_pdf/presentation/controllers/pdf_settings_controller.dart';
-import 'package:image_cropper/image_cropper.dart';
+
 import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/screens/widgets/perspective_crop_screen.dart';
 
 class FluidDeck extends ConsumerStatefulWidget {
   const FluidDeck({super.key});
@@ -201,29 +202,19 @@ class _FluidDeckState extends ConsumerState<FluidDeck> {
 
     final currentPage = state.pages[state.focusedPageIndex];
 
-    final croppedFile = await ImageCropper().cropImage(
-      sourcePath: currentPage.effectivePath,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: 'Crop Image',
-          toolbarColor: Theme.of(context).primaryColor,
-          toolbarWidgetColor: Colors.white,
-          initAspectRatio: CropAspectRatioPreset.original,
-          lockAspectRatio: false,
-          hideBottomControls: false,
+    final String? newPath = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PerspectiveCropScreen(
+          imagePath: currentPage.effectivePath,
         ),
-        IOSUiSettings(
-          title: 'Crop Image',
-        ),
-      ],
+      ),
     );
 
-    if (croppedFile != null) {
-      final newThumbnail = await ImageService.generateThumbnail(
-        croppedFile.path,
-      );
+    if (newPath != null) {
+      final newThumbnail = await ImageService.generateThumbnail(newPath);
       final updatedPage = currentPage.copyWith(
-        croppedPath: croppedFile.path,
+        croppedPath: newPath,
         thumbnailBytes: newThumbnail,
       );
       notifier.updatePage(state.focusedPageIndex, updatedPage);
