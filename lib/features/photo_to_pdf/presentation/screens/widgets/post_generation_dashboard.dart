@@ -2,17 +2,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:gal/gal.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/controllers/workspace_controller.dart';
+import 'package:docsathi/features/photo_to_pdf/services/image_service.dart';
 
 class PostGenerationDashboard extends StatefulWidget {
   final String pdfPath;
   final String fileName;
-  final List<String> imagePaths;
+  final List<DocumentPage> pages;
 
   const PostGenerationDashboard({
     super.key,
     required this.pdfPath,
     required this.fileName,
-    required this.imagePaths,
+    required this.pages,
   });
 
   @override
@@ -44,8 +46,15 @@ class _PostGenerationDashboardState extends State<PostGenerationDashboard> {
       }
 
       if (hasAccess) {
-        for (final path in widget.imagePaths) {
-          await Gal.putImage(path);
+        for (final page in widget.pages) {
+          String pathToSave = page.effectivePath;
+          if (page.filterType != FilterType.original) {
+            pathToSave = await ImageService.applyColorFilter(
+              pathToSave,
+              page.filterType.name,
+            );
+          }
+          await Gal.putImage(pathToSave);
         }
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

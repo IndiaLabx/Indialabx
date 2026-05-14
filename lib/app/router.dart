@@ -7,6 +7,18 @@ import 'package:docsathi/features/photo_to_pdf/presentation/screens/external_pdf
 
 final appRouter = GoRouter(
   initialLocation: '/',
+  // ignore deep links that are content:// or file://
+  // since they are handled by receive_sharing_intent
+  errorBuilder: (context, state) {
+    return const HomeScreen();
+  },
+  redirect: (context, state) {
+    final location = state.uri.toString();
+    if (location.startsWith('content://') || location.startsWith('file://')) {
+      return '/';
+    }
+    return null;
+  },
   routes: [
     GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
     GoRoute(
