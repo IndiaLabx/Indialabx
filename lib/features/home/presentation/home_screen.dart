@@ -7,6 +7,57 @@ import 'package:intl/intl.dart';
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
+  static const List<_ToolItem> _tools = [
+    _ToolItem(
+      title: 'Photo to PDF',
+      subtitle: 'Convert photos into polished PDF documents.',
+      icon: Icons.picture_as_pdf_rounded,
+      route: '/photo-to-pdf',
+      active: true,
+      accent: Color(0xFFB71C1C),
+    ),
+    _ToolItem(
+      title: 'Resize Image',
+      subtitle: 'Resize for exact dimension and KB requirements.',
+      icon: Icons.photo_size_select_large_rounded,
+      route: '/resize',
+      active: true,
+      accent: Color(0xFF0D47A1),
+    ),
+    _ToolItem(
+      title: 'PDF Editor',
+      subtitle: 'Reorder, remove, and update PDF pages.',
+      icon: Icons.edit_document,
+      route: '/pdf-edit',
+      active: false,
+      accent: Color(0xFF4A148C),
+    ),
+    _ToolItem(
+      title: 'Merge PDF',
+      subtitle: 'Combine multiple PDFs into one file.',
+      icon: Icons.merge_type,
+      route: '/pdf-merge',
+      active: false,
+      accent: Color(0xFF1B5E20),
+    ),
+    _ToolItem(
+      title: 'Compress Image',
+      subtitle: 'Reduce file size while preserving quality.',
+      icon: Icons.compress_rounded,
+      route: '/compress',
+      active: false,
+      accent: Color(0xFF004D40),
+    ),
+    _ToolItem(
+      title: 'Scan Document',
+      subtitle: 'Capture and clean documents from camera.',
+      icon: Icons.document_scanner,
+      route: '/scan',
+      active: false,
+      accent: Color(0xFF37474F),
+    ),
+  ];
+
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
@@ -444,17 +495,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void _showComingSoonBottomSheet(BuildContext context, String featureName) {
     showModalBottomSheet(
       context: context,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.construction, size: 48, color: Colors.orange),
-              const SizedBox(height: 16),
+              const Icon(Icons.construction, size: 44, color: Colors.orange),
+              const SizedBox(height: 12),
               Text(
                 '$featureName is Coming Soon',
                 style: const TextStyle(
@@ -469,26 +521,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 style: TextStyle(fontSize: 14, color: Colors.black54),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('OK'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('We will notify you when it is ready!'),
-                        ),
-                      );
-                    },
-                    child: const Text('Notify Me'),
-                  ),
-                ],
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Got it'),
+                ),
               ),
             ],
           ),
