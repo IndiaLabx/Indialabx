@@ -9,15 +9,18 @@ Designed for everyday needs like **Photo → PDF**, **Image Resize (Govt Forms)*
 
 ### ✅ Current (MVP)
 
-#### 📸 Photo to PDF
-- Select multiple images from gallery or camera
+#### 🧾 Create Documents
+
+##### 📸 Photo to PDF
+- Select multiple images from gallery
 - Reorder pages before generating PDF
 - Generate high-quality PDF documents
 - Save locally or share instantly
 
-#### 🖼️ Image Resize (Govt Form Ready)
-- Resize images to exact width/height
-- Reduce file size in KB (important for exam forms)
+#### 🖼️ Optimize Images
+
+##### 🖼️ Image Resize (Govt Form Ready)
+- Change width/height for exact form dimensions
 - Preset modes:
   - Passport Photo
   - Signature Upload
@@ -25,13 +28,23 @@ Designed for everyday needs like **Photo → PDF**, **Image Resize (Govt Forms)*
 
 ---
 
-### 🔜 Upcoming Features
+### 🔜 Upcoming Features (Category-wise)
 
+#### 🧾 Create Documents
+- 📷 Document Scanner (camera capture + auto cleanup)
+
+#### 🖼️ Optimize Images
+- 🗜️ Compress Image (reduce KB/MB while preserving dimensions)
+
+#### 📄 Manage PDFs
 - 📄 PDF Merge & Split  
 - ✏️ PDF Editor (Reorder, Delete pages)  
-- 📷 Document Scanner  
+
+#### 🤖 Extract & Secure
 - 🔍 OCR (Text extraction from images)  
 - 🧾 Watermark & Digital Signature  
+
+#### ☁️ Organize & Sync
 - ☁️ Cloud Backup & Sync  
 - 📁 File Manager Dashboard  
 
