@@ -1,11 +1,317 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:docsathi/features/photo_to_pdf/presentation/controllers/document_controller.dart';
+import 'package:intl/intl.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1C2A39),
+        elevation: 0,
+        title: const Text(
+          'Doc Scanner',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+            fontSize: 22,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () {},
+          tooltip: 'Menu',
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.workspace_premium, color: Color(0xFFFFC107)),
+            onPressed: () {},
+            tooltip: 'Premium',
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {},
+            tooltip: 'Search',
+          ),
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () {},
+            tooltip: 'More options',
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: Colors.blue,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: Colors.blue,
+          indicatorWeight: 3,
+          tabs: const [
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [Icon(Icons.home), SizedBox(width: 8), Text('Home')],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.business_center),
+                  SizedBox(width: 8),
+                  Text('PDF Tools'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [_buildHomeTab(context, ref), _buildToolsTab(context)],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/photo-to-pdf/workspace'),
+        backgroundColor: Colors.blue.shade600,
+        icon: const Icon(Icons.camera_alt, color: Colors.white),
+        label: const Text(
+          'New PDF',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeTab(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        // Filter Chips Row
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Row(
+            children: [
+              FilterChip(
+                label: const Text('All docs'),
+                selected: true,
+                onSelected: (_) {},
+                backgroundColor: Colors.white,
+                selectedColor: Colors.blue,
+                labelStyle: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+                showCheckmark: false,
+                avatar: const Icon(
+                  Icons.touch_app,
+                  size: 16,
+                  color: Colors.white,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text('Recent'),
+                selected: false,
+                onSelected: (_) {},
+                backgroundColor: Colors.white,
+                labelStyle: const TextStyle(color: Colors.black87),
+                avatar: const Icon(
+                  Icons.history,
+                  size: 16,
+                  color: Colors.black54,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilterChip(
+                label: const Text('Favourite'),
+                selected: false,
+                onSelected: (_) {},
+                backgroundColor: Colors.white,
+                labelStyle: const TextStyle(color: Colors.black87),
+                avatar: const Icon(
+                  Icons.star_border,
+                  size: 16,
+                  color: Colors.black54,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: Colors.grey.shade300),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+
+        // Documents List
+        Expanded(
+          child: Consumer(
+            builder: (context, ref, child) {
+              final documents = ref.watch(documentListProvider);
+
+              if (documents.isEmpty) {
+                return _buildEmptyState(context);
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: documents.length,
+                itemBuilder: (context, index) {
+                  final doc = documents[index];
+                  return Card(
+                    elevation: 1,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(12),
+                      leading: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.picture_as_pdf,
+                            color: Colors.red,
+                            size: 32,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        doc.fileName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Row(
+                          children: [
+                            Text(
+                              DateFormat('dd-MMM-yyyy').format(doc.createdAt),
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade400),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${doc.pageCount}',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.picture_as_pdf,
+                              size: 14,
+                              color: Colors.blue.shade700,
+                            ),
+                          ],
+                        ),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.more_horiz),
+                        onPressed: () {
+                          context.push(
+                            '/photo-to-pdf/preview',
+                            extra: doc.filePath,
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.description_outlined,
+            size: 64,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No documents yet',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap + to create a new PDF',
+            style: TextStyle(color: Colors.grey.shade500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolsTab(BuildContext context) {
     final tools = [
       {
         'title': 'Photo to PDF',
@@ -45,35 +351,93 @@ class HomeScreen extends StatelessWidget {
       },
     ];
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('DocSathi Utilities')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.1,
-          ),
-          itemCount: tools.length,
-          itemBuilder: (context, index) {
-            final tool = tools[index];
-            return _ToolCard(
-              title: tool['title'] as String,
-              icon: tool['icon'] as IconData,
-              isActive: tool['active'] as bool,
-              onTap: () {
-                if (tool['active'] as bool) {
-                  context.push(tool['route'] as String);
-                } else {
-                  _showComingSoonBottomSheet(context, tool['title'] as String);
-                }
-              },
-            );
-          },
-        ),
+    return GridView.builder(
+      padding: const EdgeInsets.all(16.0),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.1,
       ),
+      itemCount: tools.length,
+      itemBuilder: (context, index) {
+        final tool = tools[index];
+        final isActive = tool['active'] as bool;
+
+        return Card(
+          elevation: isActive ? 2 : 0,
+          color: isActive ? Colors.white : Colors.grey.shade50,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: isActive ? Colors.transparent : Colors.grey.shade200,
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {
+              if (isActive) {
+                context.push(tool['route'] as String);
+              } else {
+                _showComingSoonBottomSheet(context, tool['title'] as String);
+              }
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? Colors.blue.shade50
+                        : Colors.grey.shade200,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    tool['icon'] as IconData,
+                    size: 32,
+                    color: isActive
+                        ? Colors.blue.shade700
+                        : Colors.grey.shade400,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  tool['title'] as String,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: isActive ? Colors.black87 : Colors.grey.shade500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (!isActive) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Text(
+                      'Soon',
+                      style: TextStyle(
+                        color: Colors.orange.shade700,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -93,15 +457,16 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 '$featureName is Coming Soon',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'This feature is currently under development. Stay tuned for updates!',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: TextStyle(fontSize: 14, color: Colors.black54),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -129,94 +494,6 @@ class HomeScreen extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _ToolCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _ToolCard({
-    required this.title,
-    required this.icon,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: isActive
-                ? LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primaryContainer,
-                      Theme.of(context).colorScheme.surface,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isActive
-                ? null
-                : Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 48,
-                color: isActive
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).disabledColor,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isActive
-                      ? Theme.of(context).colorScheme.onSurface
-                      : Theme.of(context).disabledColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              if (!isActive) ...[
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Soon',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
